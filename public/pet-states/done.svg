@@ -1,0 +1,22 @@
+<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes check-draw {
+      0% { stroke-dasharray: 0, 200; }
+      100% { stroke-dasharray: 200, 0; }
+    }
+    .check-anim { animation: check-draw 0.5s ease-out forwards; }
+  </style>
+  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#30d080" opacity="0.9"/>
+  <circle cx="75" cy="55" r="35" fill="#30d080"/>
+  <circle cx="62" cy="50" r="10" fill="white"/>
+  <circle cx="64" cy="50" r="5" fill="#222"/>
+  <circle cx="88" cy="50" r="10" fill="white"/>
+  <circle cx="90" cy="50" r="5" fill="#222"/>
+  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
+  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#30d080" opacity="0.7"/>
+  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#30d080" opacity="0.7"/>
+  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
+  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
+  <path d="M55 70 L70 85 L95 55" stroke="white" stroke-width="5" fill="none"
+    stroke-linecap="round" stroke-linejoin="round" class="check-anim"/>
+</svg>

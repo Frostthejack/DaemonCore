@@ -1,0 +1,25 @@
+<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes float {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .thought1 { animation: float 1.5s infinite ease-in-out; }
+    .thought2 { animation: float 1.5s infinite ease-in-out 0.3s; }
+    .thought3 { animation: float 1.5s infinite ease-in-out 0.6s; }
+  </style>
+  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#f0a030" opacity="0.9"/>
+  <circle cx="75" cy="55" r="35" fill="#f0a030"/>
+  <circle cx="62" cy="50" r="10" fill="white"/>
+  <circle cx="64" cy="50" r="5" fill="#222"/>
+  <circle cx="88" cy="50" r="10" fill="white"/>
+  <circle cx="90" cy="50" r="5" fill="#222"/>
+  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
+  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#f0a030" opacity="0.7"/>
+  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#f0a030" opacity="0.7"/>
+  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
+  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
+  <circle cx="105" cy="30" r="4" fill="white" class="thought1"/>
+  <circle cx="115" cy="22" r="6" fill="white" class="thought2"/>
+  <circle cx="125" cy="15" r="8" fill="white" class="thought3"/>
+</svg>
