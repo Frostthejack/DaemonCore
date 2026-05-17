@@ -1,4 +1,92 @@
 use tauri::{Manager, Emitter, menu::{MenuBuilder, MenuItemBuilder, CheckMenuItemBuilder}, tray::TrayIconBuilder, image::Image};
+use axum::{
+    routing::post,
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tauri::AppHandle;
+
+/// Port for the webhook server — change this constant to reconfigure.
+const WEBHOOK_PORT: u16 = 32947;
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WebhookEvent {
+    event_type: String,
+    profile_name: String,
+    session_id: Option<String>,
+    message: Option<String>,
+    #[serde(default)]
+    metadata: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+struct WebhookResponse {
+    status: String,
+    message: String,
+}
+
+/// Map Hermes event types to PetState values for the frontend.
+fn map_event_to_pet_state(event_type: &str) -> &str {
+    match event_type {
+        "agent_start" => "Idle",
+        "agent_thinking" => "Thinking",
+        "agent_working" => "Working",
+        "agent_done" => "Done",
+        "agent_error" => "Error",
+        "agent_notification" => "Notification",
+        "agent_sleep" => "Sleeping",
+        _ => "Idle",
+    }
+}
+
+async fn handle_webhook(
+    State(app): State<Arc<Mutex<AppHandle>>>,
+    Json(payload): Json<WebhookEvent>,
+) -> Result<Json<WebhookResponse>, StatusCode> {
+    eprintln!("[webhook] Received event: {} for profile: {}", payload.event_type, payload.profile_name);
+
+    let app = app.lock().await;
+
+    let pet_state = map_event_to_pet_state(&payload.event_type);
+
+    // Emit pet_state_event to frontend with the mapped state
+    if let Err(e) = app.emit("pet_state_event", pet_state) {
+        eprintln!("[webhook] Failed to emit pet_state_event: {}", e);
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    // Also emit the raw event for compatibility
+    if let Err(e) = app.emit("hermes_event", &payload) {
+        eprintln!("[webhook] Failed to emit hermes_event: {}", e);
+    }
+
+    Ok(Json(WebhookResponse {
+        status: "ok".to_string(),
+        message: format!("Event {} mapped to pet state: {}", payload.event_type, pet_state),
+    }))
+}
+
+async fn start_webhook_server(app_handle: tauri::AppHandle) {
+    let app = Arc::new(Mutex::new(app_handle));
+
+    let router = Router::new()
+        .route("/api/webhook", post(handle_webhook))
+        .with_state(app);
+
+    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", WEBHOOK_PORT))
+        .await
+        .expect("Failed to bind webhook server");
+
+    eprintln!("[webhook] Server listening on http://127.0.0.1:{}", WEBHOOK_PORT);
+
+    axum::serve(listener, router)
+        .await
+        .expect("Webhook server failed");
+}
 
 #[tauri::command]
 fn set_ignore_cursor_events(app: tauri::AppHandle, ignore: bool) -> Result<(), String> {
@@ -116,6 +204,11 @@ pub async fn run() {
             get_mouse_pos,
             set_ignore_cursor_events,
         ])
+        // Start webhook server in background using Tauri async runtime
+        .setup(|app| {
+            tauri::async_runtime::spawn(start_webhook_server(app.handle().clone()));
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

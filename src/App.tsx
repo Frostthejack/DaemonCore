@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { PetWidget } from "./components/PetWidget";
+import { SettingsPanel } from "./components/SettingsPanel";
+import { SessionPanel } from "./components/SessionPanel";
 import { useAppConfig } from "./hooks/useAppConfig";
 import { usePetSystemStore } from "./store/petSystem";
 import { CHARACTER_REGISTRY } from "./types/pet";
@@ -100,6 +102,7 @@ function App() {
   const { showPet, theme, isSoundsEnabled } = useAppConfig();
   const pets = usePetSystemStore((s) => s.pets);
   const [managerOpen, setManagerOpen] = useState(false);
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
 
   // Spawn default pets on mount (will be replaced by Hermes webhook later)
   useEffect(() => {
@@ -139,8 +142,25 @@ function App() {
             <button onClick={() => setManagerOpen(false)}>✕</button>
           </div>
           <PetManager />
+          <SettingsPanel />
         </div>
       )}
+
+      {/* Session Panel */}
+      <SessionPanel
+        isOpen={sessionPanelOpen}
+        onClose={() => setSessionPanelOpen(false)}
+      />
+
+      {/* Session panel toggle */}
+      <button
+        className="manager-toggle"
+        onClick={() => setSessionPanelOpen(!sessionPanelOpen)}
+        title="Session panel"
+        style={{ bottom: 80 }}
+      >
+        ⏺
+      </button>
     </main>
   );
 }
