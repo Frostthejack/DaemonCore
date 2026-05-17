@@ -1,21 +1,73 @@
-<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @keyframes flap {
-      0%, 100% { transform: rotate(0deg); }
-      50% { transform: rotate(-15deg); }
-    }
-    .wing1 { animation: flap 0.5s infinite ease-in-out; transform-origin: 35px 85px; }
-    .wing2 { animation: flap 0.5s infinite ease-in-out 0.25s; transform-origin: 115px 85px; }
-  </style>
-  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#c070f0" opacity="0.9"/>
-  <circle cx="75" cy="55" r="35" fill="#c070f0"/>
-  <circle cx="62" cy="50" r="10" fill="white"/>
-  <circle cx="64" cy="50" r="5" fill="#222"/>
-  <circle cx="88" cy="50" r="10" fill="white"/>
-  <circle cx="90" cy="50" r="5" fill="#222"/>
-  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
-  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#c070f0" opacity="0.7" class="wing1"/>
-  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#c070f0" opacity="0.7" class="wing2"/>
-  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGradG" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#c090f0"/>
+      <stop offset="100%" stop-color="#a070d0"/>
+    </radialGradient>
+    <radialGradient id="bellyGradG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0e8ff"/>
+      <stop offset="100%" stop-color="#e0d0f0"/>
+    </radialGradient>
+    <radialGradient id="eyeGradG" cx="40%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8e0f0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Body - slightly tilted -->
+  <g transform="rotate(-5, 100, 110)">
+    <ellipse cx="100" cy="130" rx="55" ry="50" fill="url(#bodyGradG)"/>
+    <ellipse cx="100" cy="140" rx="35" ry="35" fill="url(#bellyGradG)"/>
+
+    <!-- Head -->
+    <circle cx="100" cy="75" r="45" fill="url(#bodyGradG)"/>
+
+    <!-- Ear tufts -->
+    <path d="M 65 38 Q 55 15 75 30 Q 78 35 72 42 Z" fill="#a070d0"/>
+    <path d="M 135 38 Q 145 15 125 30 Q 122 35 128 42 Z" fill="#a070d0"/>
+    <path d="M 68 40 Q 60 22 76 34 Z" fill="#c090f0"/>
+    <path d="M 132 40 Q 140 22 124 34 Z" fill="#c090f0"/>
+
+    <!-- Eye whites - dazed -->
+    <ellipse cx="82" cy="72" rx="18" ry="19" fill="url(#eyeGradG)" stroke="#4a3f6b" stroke-width="1.5"/>
+    <ellipse cx="118" cy="72" rx="18" ry="19" fill="url(#eyeGradG)" stroke="#4a3f6b" stroke-width="1.5"/>
+
+    <!-- Pupils - unfocused / dazed -->
+    <circle cx="82" cy="72" r="9" fill="#2d2b55"/>
+    <circle cx="118" cy="72" r="9" fill="#2d2b55"/>
+
+    <!-- Eye highlights - off center -->
+    <circle cx="85" cy="68" r="4" fill="white" opacity="0.9"/>
+    <circle cx="121" cy="68" r="4" fill="white" opacity="0.9"/>
+
+    <!-- Dazed eyebrows -->
+    <path d="M 72 58 Q 82 56 92 60" fill="none" stroke="#7040a0" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 108 60 Q 118 56 128 58" fill="none" stroke="#7040a0" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Beak - slightly open -->
+    <ellipse cx="100" cy="90" rx="5" ry="4" fill="#c06020" stroke="#a05010" stroke-width="1"/>
+
+    <!-- Wings - spread out for balance -->
+    <path d="M 45 115 Q 20 120 25 145 Q 40 140 50 125 Z" fill="#9060c0" opacity="0.8">
+      <animateTransform attributeName="transform" type="rotate" values="-5,45,120;5,45,120;-5,45,120" dur="0.8s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 155 115 Q 180 120 175 145 Q 160 140 150 125 Z" fill="#9060c0" opacity="0.8">
+      <animateTransform attributeName="transform" type="rotate" values="5,155,120;-5,155,120;5,155,120" dur="0.8s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Feet - dangling -->
+    <path d="M 80 175 L 75 188 M 80 175 L 80 188 M 80 175 L 85 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M 120 175 L 115 188 M 120 175 L 120 188 M 120 175 L 125 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+    <!-- Feather detail lines on belly -->
+    <path d="M 85 130 Q 100 135 115 130" fill="none" stroke="#e0d0f0" stroke-width="1" opacity="0.5"/>
+    <path d="M 82 140 Q 100 145 118 140" fill="none" stroke="#e0d0f0" stroke-width="1" opacity="0.5"/>
+    <path d="M 85 150 Q 100 155 115 150" fill="none" stroke="#e0d0f0" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <!-- Motion lines -->
+  <line x1="30" y1="100" x2="20" y2="100" stroke="#a070d0" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+  <line x1="30" y1="110" x2="18" y2="110" stroke="#a070d0" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <line x1="170" y1="100" x2="180" y2="100" stroke="#a070d0" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+  <line x1="170" y1="110" x2="182" y2="110" stroke="#a070d0" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
 </svg>

@@ -1,22 +1,69 @@
-<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @keyframes check-draw {
-      0% { stroke-dasharray: 0, 200; }
-      100% { stroke-dasharray: 200, 0; }
-    }
-    .check-anim { animation: check-draw 0.5s ease-out forwards; }
-  </style>
-  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#30d080" opacity="0.9"/>
-  <circle cx="75" cy="55" r="35" fill="#30d080"/>
-  <circle cx="62" cy="50" r="10" fill="white"/>
-  <circle cx="64" cy="50" r="5" fill="#222"/>
-  <circle cx="88" cy="50" r="10" fill="white"/>
-  <circle cx="90" cy="50" r="5" fill="#222"/>
-  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
-  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#30d080" opacity="0.7"/>
-  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#30d080" opacity="0.7"/>
-  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <path d="M55 70 L70 85 L95 55" stroke="white" stroke-width="5" fill="none"
-    stroke-linecap="round" stroke-linejoin="round" class="check-anim"/>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGradD" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#5dd89a"/>
+      <stop offset="100%" stop-color="#30d080"/>
+    </radialGradient>
+    <radialGradient id="bellyGradD" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8fff0"/>
+      <stop offset="100%" stop-color="#c8f0d8"/>
+    </radialGradient>
+    <radialGradient id="eyeGradD" cx="40%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f0e8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Body -->
+  <ellipse cx="100" cy="130" rx="55" ry="50" fill="url(#bodyGradD)"/>
+  <ellipse cx="100" cy="140" rx="35" ry="35" fill="url(#bellyGradD)"/>
+
+  <!-- Head -->
+  <circle cx="100" cy="75" r="45" fill="url(#bodyGradD)"/>
+
+  <!-- Ear tufts -->
+  <path d="M 65 38 Q 55 15 75 30 Q 78 35 72 42 Z" fill="#30d080"/>
+  <path d="M 135 38 Q 145 15 125 30 Q 122 35 128 42 Z" fill="#30d080"/>
+  <path d="M 68 40 Q 60 22 76 34 Z" fill="#5dd89a"/>
+  <path d="M 132 40 Q 140 22 124 34 Z" fill="#5dd89a"/>
+
+  <!-- Happy squinting eyes -->
+  <path d="M 68 70 Q 82 62 96 70" fill="none" stroke="#2d2b55" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 104 70 Q 118 62 132 70" fill="none" stroke="#2d2b55" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Beak - smiling -->
+  <path d="M 90 88 Q 100 98 110 88" fill="none" stroke="#e08e3a" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Wings - raised in celebration -->
+  <path d="M 48 105 Q 25 90 30 115 Q 40 120 50 115 Z" fill="#2ab068" opacity="0.8"/>
+  <path d="M 152 105 Q 175 90 170 115 Q 160 120 150 115 Z" fill="#2ab068" opacity="0.8"/>
+
+  <!-- Checkmark floating above -->
+  <path d="M 85 30 L 95 45 L 115 25" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <animate attributeName="stroke-dasharray" values="0,200;200,0" dur="0.6s" fill="freeze"/>
+  </path>
+
+  <!-- Sparkles -->
+  <circle cx="60" cy="40" r="2" fill="white" opacity="0.8">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="140" cy="35" r="2.5" fill="white" opacity="0.7">
+    <animate attributeName="opacity" values="0.2;0.9;0.2" dur="1.2s" repeatCount="indefinite" begin="0.3s"/>
+  </circle>
+  <circle cx="100" cy="20" r="2" fill="white" opacity="0.6">
+    <animate attributeName="opacity" values="0.2;0.8;0.2" dur="0.8s" repeatCount="indefinite" begin="0.6s"/>
+  </circle>
+
+  <!-- Feet -->
+  <path d="M 80 175 L 75 188 M 80 175 L 80 188 M 80 175 L 85 188" stroke="#f4a261" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 120 175 L 115 188 M 120 175 L 120 188 M 120 175 L 125 188" stroke="#f4a261" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Feather detail lines on belly -->
+  <path d="M 85 130 Q 100 135 115 130" fill="none" stroke="#c8f0d8" stroke-width="1" opacity="0.5"/>
+  <path d="M 82 140 Q 100 145 118 140" fill="none" stroke="#c8f0d8" stroke-width="1" opacity="0.5"/>
+  <path d="M 85 150 Q 100 155 115 150" fill="none" stroke="#c8f0d8" stroke-width="1" opacity="0.5"/>
+
+  <!-- Blush -->
+  <ellipse cx="72" cy="82" rx="8" ry="5" fill="#ff9999" opacity="0.3"/>
+  <ellipse cx="128" cy="82" rx="8" ry="5" fill="#ff9999" opacity="0.3"/>
 </svg>

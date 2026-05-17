@@ -1,21 +1,68 @@
-<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.1); }
-    }
-    .notify { animation: pulse 1s infinite ease-in-out; }
-  </style>
-  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#f0d030" opacity="0.9"/>
-  <circle cx="75" cy="55" r="35" fill="#f0d030"/>
-  <circle cx="62" cy="50" r="10" fill="white"/>
-  <circle cx="64" cy="50" r="5" fill="#222"/>
-  <circle cx="88" cy="50" r="10" fill="white"/>
-  <circle cx="90" cy="50" r="5" fill="#222"/>
-  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
-  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#f0d030" opacity="0.7"/>
-  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#f0d030" opacity="0.7"/>
-  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <text x="65" y="75" fontSize="30" fill="white" font-weight="bold" class="notify">!</text>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGradN" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#f0d840"/>
+      <stop offset="100%" stop-color="#e0c020"/>
+    </radialGradient>
+    <radialGradient id="bellyGradN" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fffde0"/>
+      <stop offset="100%" stop-color="#f0e8c0"/>
+    </radialGradient>
+    <radialGradient id="eyeGradN" cx="40%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0ecd8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Body -->
+  <ellipse cx="100" cy="130" rx="55" ry="50" fill="url(#bodyGradN)"/>
+  <ellipse cx="100" cy="140" rx="35" ry="35" fill="url(#bellyGradN)"/>
+
+  <!-- Head -->
+  <circle cx="100" cy="75" r="45" fill="url(#bodyGradN)"/>
+
+  <!-- Ear tufts - alert -->
+  <path d="M 65 35 Q 52 10 75 28 Q 78 33 72 40 Z" fill="#e0c020"/>
+  <path d="M 135 35 Q 148 10 125 28 Q 122 33 128 40 Z" fill="#e0c020"/>
+  <path d="M 68 37 Q 58 18 76 31 Z" fill="#f0d840"/>
+  <path d="M 132 37 Q 142 18 124 31 Z" fill="#f0d840"/>
+
+  <!-- Eye whites - wide alert eyes -->
+  <ellipse cx="82" cy="70" rx="20" ry="21" fill="url(#eyeGradN)" stroke="#4a3f6b" stroke-width="1.5"/>
+  <ellipse cx="118" cy="70" rx="20" ry="21" fill="url(#eyeGradN)" stroke="#4a3f6b" stroke-width="1.5"/>
+
+  <!-- Pupils - wide -->
+  <circle cx="84" cy="72" r="10" fill="#2d2b55"/>
+  <circle cx="120" cy="72" r="10" fill="#2d2b55"/>
+
+  <!-- Eye highlights - bigger -->
+  <circle cx="88" cy="67" r="5" fill="white" opacity="0.9"/>
+  <circle cx="124" cy="67" r="5" fill="white" opacity="0.9"/>
+
+  <!-- Alert eyebrows - raised high -->
+  <path d="M 66 50 Q 82 42 98 50" fill="none" stroke="#8b7010" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 102 50 Q 118 42 134 50" fill="none" stroke="#8b7010" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Beak - open in surprise -->
+  <ellipse cx="100" cy="92" rx="6" ry="5" fill="#c06020" stroke="#a05010" stroke-width="1"/>
+
+  <!-- Wings - slightly raised -->
+  <path d="M 48 110 Q 30 125 42 150 Q 52 140 55 125 Z" fill="#d0b018" opacity="0.8"/>
+  <path d="M 152 110 Q 170 125 158 150 Q 148 140 145 125 Z" fill="#d0b018" opacity="0.8"/>
+
+  <!-- Exclamation mark above head -->
+  <g>
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite"/>
+    <rect x="96" y="12" width="8" height="22" rx="2" fill="#ff4444"/>
+    <circle cx="100" cy="42" r="4" fill="#ff4444"/>
+  </g>
+
+  <!-- Feet -->
+  <path d="M 80 175 L 75 188 M 80 175 L 80 188 M 80 175 L 85 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 120 175 L 115 188 M 120 175 L 120 188 M 120 175 L 125 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Feather detail lines on belly -->
+  <path d="M 85 130 Q 100 135 115 130" fill="none" stroke="#f0e8c0" stroke-width="1" opacity="0.5"/>
+  <path d="M 82 140 Q 100 145 118 140" fill="none" stroke="#f0e8c0" stroke-width="1" opacity="0.5"/>
+  <path d="M 85 150 Q 100 155 115 150" fill="none" stroke="#f0e8c0" stroke-width="1" opacity="0.5"/>
 </svg>

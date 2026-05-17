@@ -1,14 +1,66 @@
-<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#f03040" opacity="0.9"/>
-  <circle cx="75" cy="55" r="35" fill="#f03040"/>
-  <circle cx="62" cy="50" r="10" fill="white"/>
-  <circle cx="64" cy="50" r="5" fill="#222"/>
-  <circle cx="88" cy="50" r="10" fill="white"/>
-  <circle cx="90" cy="50" r="5" fill="#222"/>
-  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
-  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#f03040" opacity="0.7"/>
-  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#f03040" opacity="0.7"/>
-  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <text x="65" y="75" fontSize="30" fill="white" font-weight="bold">!</text>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGradE" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#f06060"/>
+      <stop offset="100%" stop-color="#d03030"/>
+    </radialGradient>
+    <radialGradient id="bellyGradE" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe8e8"/>
+      <stop offset="100%" stop-color="#f0c8c8"/>
+    </radialGradient>
+    <radialGradient id="eyeGradE" cx="40%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0e0e0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Body - shaking -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-3,0;3,0;0,0" dur="0.3s" repeatCount="indefinite"/>
+    <ellipse cx="100" cy="130" rx="55" ry="50" fill="url(#bodyGradE)"/>
+    <ellipse cx="100" cy="140" rx="35" ry="35" fill="url(#bellyGradE)"/>
+
+    <!-- Head -->
+    <circle cx="100" cy="75" r="45" fill="url(#bodyGradE)"/>
+
+    <!-- Ear tufts - droopy -->
+    <path d="M 65 42 Q 50 30 70 45 Q 75 48 72 48 Z" fill="#d03030"/>
+    <path d="M 135 42 Q 150 30 130 45 Q 125 48 128 48 Z" fill="#d03030"/>
+
+    <!-- Eye whites - worried -->
+    <ellipse cx="82" cy="72" rx="18" ry="20" fill="url(#eyeGradE)" stroke="#4a3f6b" stroke-width="1.5"/>
+    <ellipse cx="118" cy="72" rx="18" ry="20" fill="url(#eyeGradE)" stroke="#4a3f6b" stroke-width="1.5"/>
+
+    <!-- Pupils - looking worried -->
+    <circle cx="84" cy="74" r="9" fill="#2d2b55"/>
+    <circle cx="120" cy="74" r="9" fill="#2d2b55"/>
+
+    <!-- Eye highlights -->
+    <circle cx="87" cy="70" r="4" fill="white" opacity="0.9"/>
+    <circle cx="123" cy="70" r="4" fill="white" opacity="0.9"/>
+
+    <!-- Worried eyebrows -->
+    <path d="M 70 55 Q 82 62 94 58" fill="none" stroke="#8b2020" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 106 58 Q 118 62 130 55" fill="none" stroke="#8b2020" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Beak - frowning -->
+    <path d="M 90 92 Q 100 86 110 92" fill="none" stroke="#c06020" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Wings - droopy -->
+    <path d="M 50 120 Q 35 140 50 160 Q 60 145 60 130 Z" fill="#c02828" opacity="0.8"/>
+    <path d="M 150 120 Q 165 140 150 160 Q 140 145 140 130 Z" fill="#c02828" opacity="0.8"/>
+
+    <!-- Feet -->
+    <path d="M 80 175 L 75 188 M 80 175 L 80 188 M 80 175 L 85 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M 120 175 L 115 188 M 120 175 L 120 188 M 120 175 L 125 188" stroke="#c06020" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+    <!-- Feather detail lines on belly -->
+    <path d="M 85 130 Q 100 135 115 130" fill="none" stroke="#f0c8c8" stroke-width="1" opacity="0.5"/>
+    <path d="M 82 140 Q 100 145 118 140" fill="none" stroke="#f0c8c8" stroke-width="1" opacity="0.5"/>
+
+    <!-- Sweat drop -->
+    <path d="M 145 50 Q 148 40 150 50 Q 148 55 145 50 Z" fill="#88ccff" opacity="0.7">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="1.5s" repeatCount="indefinite"/>
+    </path>
+  </g>
 </svg>

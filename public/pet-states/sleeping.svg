@@ -1,24 +1,73 @@
-<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @keyframes zzz {
-      0% { opacity: 0.3; transform: translateY(0); }
-      50% { opacity: 0.7; transform: translateY(-5px); }
-      100% { opacity: 0.3; transform: translateY(0); }
-    }
-    .zzz1 { animation: zzz 2s infinite ease-in-out; }
-    .zzz2 { animation: zzz 2s infinite ease-in-out 0.5s; }
-    .zzz3 { animation: zzz 2s infinite ease-in-out 1s; }
-  </style>
-  <ellipse cx="75" cy="90" rx="45" ry="40" fill="#8080a0" opacity="0.9"/>
-  <circle cx="75" cy="55" r="35" fill="#8080a0"/>
-  <line x1="55" y1="50" x2="70" y2="50" stroke="#222" stroke-width="3" stroke-linecap="round"/>
-  <line x1="80" y1="50" x2="95" y2="50" stroke="#222" stroke-width="3" stroke-linecap="round"/>
-  <polygon points="75,58 70,68 80,68" fill="#f0a030"/>
-  <ellipse cx="35" cy="85" rx="12" ry="20" fill="#8080a0" opacity="0.7"/>
-  <ellipse cx="115" cy="85" rx="12" ry="20" fill="#8080a0" opacity="0.7"/>
-  <ellipse cx="60" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <ellipse cx="90" cy="128" rx="10" ry="5" fill="#f0a030"/>
-  <text x="100" y="25" fontSize="14" fill="white" opacity="0.7" class="zzz1">Z</text>
-  <text x="112" y="18" fontSize="10" fill="white" opacity="0.5" class="zzz2">z</text>
-  <text x="120" y="12" fontSize="8" fill="white" opacity="0.3" class="zzz3">z</text>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bodyGradS" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#a0a0b8"/>
+      <stop offset="100%" stop-color="#8080a0"/>
+    </radialGradient>
+    <radialGradient id="bellyGradS" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8e8f0"/>
+      <stop offset="100%" stop-color="#d0d0e0"/>
+    </radialGradient>
+    <radialGradient id="eyeGradS" cx="40%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e0e8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Body -->
+  <ellipse cx="100" cy="130" rx="55" ry="50" fill="url(#bodyGradS)"/>
+  <ellipse cx="100" cy="140" rx="35" ry="35" fill="url(#bellyGradS)"/>
+
+  <!-- Head - slightly tilted -->
+  <g transform="rotate(8, 100, 75)">
+    <circle cx="100" cy="75" r="45" fill="url(#bodyGradS)"/>
+
+    <!-- Ear tufts - relaxed -->
+    <path d="M 65 40 Q 58 22 75 33 Q 78 37 72 43 Z" fill="#8080a0"/>
+    <path d="M 135 40 Q 142 22 125 33 Q 122 37 128 43 Z" fill="#8080a0"/>
+  </g>
+
+  <!-- Closed eyes - peaceful -->
+  <path d="M 68 72 Q 82 64 96 72" fill="none" stroke="#4a4a6b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 104 72 Q 118 64 132 72" fill="none" stroke="#4a4a6b" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Beak - relaxed -->
+  <path d="M 94 88 L 100 95 L 106 88 Z" fill="#c0a060" stroke="#a08040" stroke-width="0.5"/>
+
+  <!-- Wings - tucked -->
+  <path d="M 52 120 Q 40 135 50 155 Q 58 145 60 130 Z" fill="#7070a0" opacity="0.8"/>
+  <path d="M 148 120 Q 160 135 150 155 Q 142 145 140 130 Z" fill="#7070a0" opacity="0.8"/>
+
+  <!-- Feet - relaxed -->
+  <path d="M 80 175 L 75 188 M 80 175 L 80 188 M 80 175 L 85 188" stroke="#c0a060" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 120 175 L 115 188 M 120 175 L 120 188 M 120 175 L 125 188" stroke="#c0a060" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Feather detail lines on belly -->
+  <path d="M 85 130 Q 100 135 115 130" fill="none" stroke="#d0d0e0" stroke-width="1" opacity="0.5"/>
+  <path d="M 82 140 Q 100 145 118 140" fill="none" stroke="#d0d0e0" stroke-width="1" opacity="0.5"/>
+  <path d="M 85 150 Q 100 155 115 150" fill="none" stroke="#d0d0e0" stroke-width="1" opacity="0.5"/>
+
+  <!-- Zzz floating -->
+  <text x="130" y="35" fontSize="18" fill="#8080a0" font-weight="bold" opacity="0.7" font-family="Arial, sans-serif">
+    Z
+    <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-3,-5;0,0" dur="2s" repeatCount="indefinite"/>
+  </text>
+  <text x="148" y="22" fontSize="14" fill="#8080a0" font-weight="bold" opacity="0.5" font-family="Arial, sans-serif">
+    z
+    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-2,-4;0,0" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </text>
+  <text x="162" y="12" fontSize="10" fill="#8080a0" font-weight="bold" opacity="0.3" font-family="Arial, sans-serif">
+    z
+    <animate attributeName="opacity" values="0.1;0.3;0.1" dur="2s" repeatCount="indefinite" begin="1s"/>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-1,-3;0,0" dur="2s" repeatCount="indefinite" begin="1s"/>
+  </text>
+
+  <!-- Moon / stars in background -->
+  <circle cx="45" cy="25" r="8" fill="#f0e8a0" opacity="0.4"/>
+  <circle cx="48" cy="23" r="6" fill="#8080a0" opacity="0.3"/>
+  <circle cx="155" cy="15" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="140" cy="30" r="1" fill="white" opacity="0.4"/>
+  <circle cx="165" cy="35" r="1.5" fill="white" opacity="0.3"/>
 </svg>
