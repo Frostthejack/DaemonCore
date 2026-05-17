@@ -80,3 +80,12 @@ export interface PetInstance {
   x: number;
   y: number;
 }
+
+// Webhook event payload emitted by the Rust backend via Tauri events
+export interface PetStateEvent {
+  event_type: string;
+  profile_name: string;
+  session_id?: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}

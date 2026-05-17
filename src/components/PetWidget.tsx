@@ -85,6 +85,12 @@ function PetCharacter({
 // ─── Main Pet Widget ─────────────────────────────────────────
 export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _isSoundsEnabled }: PetWidgetProps) {
   const [followTarget, setFollowTarget] = useState<{ x: number; y: number } | null>(null);
+
+  const characterId = usePetSystemStore((s) => s.getCharacterForProfile(profileName));
+  const setPetState = usePetSystemStore((s) => s.setPetState);
+  const followMouse = usePetSystemStore((s) => s.followMouse);
+  const followDistance = usePetSystemStore((s) => s.followDistance);
+
   const { position, isDragging, directionRef, widgetRef, handleMouseDown, getSizeScale } =
     usePetMovement({ petName, size: "medium", initialX, followTarget, followDistance: followDistance });
 
@@ -92,13 +98,6 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const characterId = usePetSystemStore((s) => s.getCharacterForProfile(profileName));
-  const setPetState = usePetSystemStore((s) => s.setPetState);
-  const followMouse = usePetSystemStore((s) => s.followMouse);
-  const followDistance = usePetSystemStore((s) => s.followDistance);
-
-  // Priority state machine: resolve state from queue
   const applyState = useCallback((newState: PetState) => {
     setCurrentState((prev) => {
       const resolved = resolveState(prev, newState);

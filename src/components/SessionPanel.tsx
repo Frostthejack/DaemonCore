@@ -173,7 +173,6 @@ function SessionCard({
 }) {
   const status = getStatus(state);
   const statusColor = getStatusColor(status);
-  const charDef = CHARACTER_REGISTRY[characterId];
 
   return (
     <div

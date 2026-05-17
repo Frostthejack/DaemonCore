@@ -1,12 +1,34 @@
 import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { PetWidget } from "./components/PetWidget";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SessionPanel } from "./components/SessionPanel";
 import { useAppConfig } from "./hooks/useAppConfig";
 import { usePetSystemStore } from "./store/petSystem";
 import { CHARACTER_REGISTRY } from "./types/pet";
-import type { ProfileName } from "./types/pet";
+import type { ProfileName, PetState } from "./types/pet";
 import "./App.css";
+
+// ─── Hermes event → PetState mapping ──────────────────────────
+const HERMES_EVENT_TO_PET_STATE: Record<string, PetState> = {
+  agent_start: "idle",
+  agent_thinking: "thinking",
+  agent_working: "working",
+  agent_done: "done",
+  agent_error: "error",
+  agent_notification: "notification",
+  agent_sleep: "sleeping",
+};
+
+// Validate that a payload from the webhook is well-formed
+function isValidWebhookPayload(payload: unknown): payload is {
+  event_type: string;
+  profile_name: string;
+} {
+  if (typeof payload !== "object" || payload === null) return false;
+  const p = payload as Record<string, unknown>;
+  return typeof p.event_type === "string" && typeof p.profile_name === "string";
+}
 
 // ─── Character Selector Panel ────────────────────────────────
 function CharacterSelector({ profile }: { profile: ProfileName }) {
@@ -111,6 +133,41 @@ function App() {
     if (store.pets.length === 0) {
       store.spawnPet("default");
     }
+  }, []);
+
+  // Listen for webhook events from the Rust backend
+  useEffect(() => {
+    const unlisten = listen<unknown>("hermes_event", (event) => {
+      try {
+        const payload = event.payload;
+        if (!isValidWebhookPayload(payload)) {
+          console.warn("[webhook] Malformed payload received, ignoring:", payload);
+          return;
+        }
+
+        const { event_type, profile_name } = payload;
+        const petState = HERMES_EVENT_TO_PET_STATE[event_type];
+        if (!petState) {
+          console.warn(`[webhook] Unknown event_type "${event_type}", ignoring`);
+          return;
+        }
+
+        const store = usePetSystemStore.getState();
+        // Auto-spawn a pet for this profile if one doesn't exist yet
+        const existingPet = store.pets.find((p) => p.profileName === profile_name);
+        if (!existingPet) {
+          store.spawnPet(profile_name as ProfileName);
+        }
+        store.setPetState(profile_name, petState);
+        console.debug(`[webhook] ${event_type} → ${petState} for ${profile_name}`);
+      } catch (err) {
+        console.error("[webhook] Error processing event:", err);
+      }
+    });
+
+    return () => {
+      unlisten.then((f) => f());
+    };
   }, []);
 
   return (
