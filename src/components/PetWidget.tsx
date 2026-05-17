@@ -84,8 +84,9 @@ function PetCharacter({
 
 // ─── Main Pet Widget ─────────────────────────────────────────
 export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _isSoundsEnabled }: PetWidgetProps) {
+  const [followTarget, setFollowTarget] = useState<{ x: number; y: number } | null>(null);
   const { position, isDragging, directionRef, widgetRef, handleMouseDown, getSizeScale } =
-    usePetMovement({ petName, size: "medium", initialX });
+    usePetMovement({ petName, size: "medium", initialX, followTarget, followDistance: followDistance });
 
   const [currentState, setCurrentState] = useState<PetState>("idle");
   const [bubbleText, setBubbleText] = useState<string | null>(null);
@@ -145,19 +146,12 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
     if (!followMouse || isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const dx = e.clientX - position.x;
-      const dy = e.clientY - position.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist > followDistance) {
-        // Follow mouse at distance — placeholder for v2
-        // Will use setPetPosition from store when implemented
-      }
+      setFollowTarget({ x: e.clientX, y: e.clientY });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [followMouse, followDistance, isDragging, position]);
+  }, [followMouse, isDragging]);
 
   // Expose controls via ref for external access
   useEffect(() => {

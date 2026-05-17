@@ -5,6 +5,8 @@ interface UsePetMovementArgs {
   petName: PetName;
   size: PetSize;
   initialX: number;
+  followTarget?: { x: number; y: number } | null;
+  followDistance?: number;
 }
 
 interface WanderState {
@@ -15,7 +17,7 @@ interface WanderState {
   speed: number;
 }
 
-export function usePetMovement({ petName: _petName, size, initialX }: UsePetMovementArgs) {
+export function usePetMovement({ petName: _petName, size, initialX, followTarget, followDistance }: UsePetMovementArgs) {
   const [position, setPosition] = useState({ x: initialX, y: window.innerHeight - 200 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -59,46 +61,66 @@ export function usePetMovement({ petName: _petName, size, initialX }: UsePetMove
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   };
 
-  // Animation loop using requestAnimationFrame
-  const animate = useCallback(() => {
-    const wander = wanderRef.current;
-    const pos = positionRef.current;
+    // Animation loop using requestAnimationFrame
+    const animate = useCallback(() => {
+      const wander = wanderRef.current;
+      const pos = positionRef.current;
 
-    if (wander.isMoving) {
-      const dx = wander.targetX - pos.x;
-      const dy = wander.targetY - pos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (wander.isMoving) {
+        const dx = wander.targetX - pos.x;
+        const dy = wander.targetY - pos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-      // Check if reached destination
-      if (distance < 5) {
-        wander.isMoving = false;
-        // Pause 2-5 seconds before picking new destination
-        const pauseDuration = 2000 + Math.random() * 3000;
-        wander.pauseTimer = setTimeout(() => {
-          pickDestination();
-        }, pauseDuration);
-        return;
+        // Check if reached destination
+        if (distance < 5) {
+          wander.isMoving = false;
+          // Pause 2-5 seconds before picking new destination
+          const pauseDuration = 2000 + Math.random() * 3000;
+          wander.pauseTimer = setTimeout(() => {
+            pickDestination();
+          }, pauseDuration);
+          return;
+        }
+
+        // Move toward target with easing
+        const speed = wander.speed; // ~50px/s
+        const dt = 1 / 60; // 60fps
+        const moveDistance = speed * dt;
+        const progress = Math.min(moveDistance / distance, 1);
+        const easedProgress = easeInOutCubic(progress);
+
+        const newX = pos.x + dx * easedProgress;
+        const newY = pos.y + dy * easedProgress;
+
+        // Update direction based on movement
+        if (dx > 1) directionRef.current = 1;
+        else if (dx < -1) directionRef.current = -1;
+
+        setPosition({ x: newX, y: newY });
       }
 
-      // Move toward target with easing
-      const speed = wander.speed; // ~50px/s
-      const dt = 1 / 60; // 60fps
-      const moveDistance = speed * dt;
-      const progress = Math.min(moveDistance / distance, 1);
-      const easedProgress = easeInOutCubic(progress);
+      // Follow-mouse logic: move toward cursor but maintain minimum distance
+      if (followTarget && !isDragging) {
+        const dx = followTarget.x - pos.x;
+        const dy = followTarget.y - pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = followDistance || 120;
 
-      const newX = pos.x + dx * easedProgress;
-      const newY = pos.y + dy * easedProgress;
+        if (dist > minDist) {
+          // Move toward cursor but stop at minDist
+          const ratio = Math.min((dist - minDist) / dist, 0.03);
+          const newX = pos.x + dx * ratio;
+          const newY = pos.y + dy * ratio;
 
-      // Update direction based on movement
-      if (dx > 1) directionRef.current = 1;
-      else if (dx < -1) directionRef.current = -1;
+          if (dx > 1) directionRef.current = 1;
+          else if (dx < -1) directionRef.current = -1;
 
-      setPosition({ x: newX, y: newY });
-    }
+          setPosition({ x: newX, y: newY });
+        }
+      }
 
-    animFrameRef.current = requestAnimationFrame(animate);
-  }, [pickDestination]);
+      animFrameRef.current = requestAnimationFrame(animate);
+    }, [pickDestination, followTarget, followDistance, isDragging]);
 
   // Start animation loop
   useEffect(() => {
