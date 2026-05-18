@@ -28,7 +28,8 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
-  background-color: transparent;
+  /* Nearly transparent but still captures mouse events */
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 /* ─── Pet Widget ───────────────────────────────────────────── */
@@ -166,6 +167,7 @@ body {
   justify-content: center;
   transition: all 0.2s;
   backdrop-filter: blur(10px);
+  pointer-events: auto;
 }
 
 .manager-toggle:hover {

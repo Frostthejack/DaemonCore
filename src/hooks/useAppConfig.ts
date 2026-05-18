@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
@@ -14,10 +14,12 @@ interface AppConfigState {
   theme: ThemeName;
   size: PetSize;
   isSoundsEnabled: boolean;
+  followMouse: boolean;
   setShowPet: (show: boolean) => void;
   setTheme: (theme: ThemeName) => void;
   setSize: (size: PetSize) => void;
   setSoundsEnabled: (enabled: boolean) => void;
+  setFollowMouse: (enabled: boolean) => void;
 }
 
 export const useAppConfigStore = create<AppConfigState>((set) => ({
@@ -25,10 +27,12 @@ export const useAppConfigStore = create<AppConfigState>((set) => ({
   theme: "midnight",
   size: "medium",
   isSoundsEnabled: true,
+  followMouse: true,
   setShowPet: (show) => set({ showPet: show }),
   setTheme: (theme) => set({ theme }),
   setSize: (size) => set({ size }),
   setSoundsEnabled: (enabled) => set({ isSoundsEnabled: enabled }),
+  setFollowMouse: (enabled) => set({ followMouse: enabled }),
 }));
 
 // ─── Hook ────────────────────────────────────────────────────
@@ -38,10 +42,12 @@ export function useAppConfig() {
     theme,
     size,
     isSoundsEnabled,
+    followMouse,
     setShowPet,
     setTheme,
     setSize,
     setSoundsEnabled,
+    setFollowMouse,
   } = useAppConfigStore();
 
   const lastIgnoreState = useRef<boolean | null>(null);
@@ -125,18 +131,27 @@ export function useAppConfig() {
       const id = event.payload;
       if (id === "show_pet") setShowPet(!showPet);
       if (id === "sounds") setSoundsEnabled(!isSoundsEnabled);
+      if (id === "follow_mouse") setFollowMouse(!followMouse);
+      if (id === "theme:midnight") setTheme("midnight");
+      if (id === "theme:peach") setTheme("peach");
+      if (id === "theme:cloud") setTheme("cloud");
+      if (id === "theme:moss") setTheme("moss");
+      if (id === "size:small") setSize("small");
+      if (id === "size:medium") setSize("medium");
+      if (id === "size:large") setSize("large");
     });
 
     return () => {
       unlisten.then((f) => f());
     };
-  }, [showPet, isSoundsEnabled, setShowPet, setSoundsEnabled]);
+  }, [showPet, isSoundsEnabled, followMouse, setShowPet, setSoundsEnabled, setFollowMouse, setTheme, setSize]);
 
   return {
     showPet,
     theme,
     size,
     isSoundsEnabled,
+    followMouse,
     setTheme,
     setSize,
   };

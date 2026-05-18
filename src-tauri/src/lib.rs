@@ -1,4 +1,8 @@
-use tauri::{Manager, Emitter, menu::{MenuBuilder, MenuItemBuilder, CheckMenuItemBuilder}, tray::TrayIconBuilder, image::Image};
+use tauri::{
+    menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder},
+    tray::TrayIconBuilder,
+    image::Image, Manager, Emitter, AppHandle,
+};
 use axum::{
     routing::post,
     Json, Router,
@@ -8,9 +12,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tauri::AppHandle;
 
-/// Port for the webhook server — change this constant to reconfigure.
+/// Port for the webhook server
 const WEBHOOK_PORT: u16 = 32947;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -29,7 +32,6 @@ struct WebhookResponse {
     message: String,
 }
 
-/// Map Hermes event types to PetState values for the frontend.
 fn map_event_to_pet_state(event_type: &str) -> &str {
     match event_type {
         "agent_start" => "Idle",
@@ -48,22 +50,15 @@ async fn handle_webhook(
     Json(payload): Json<WebhookEvent>,
 ) -> Result<Json<WebhookResponse>, StatusCode> {
     eprintln!("[webhook] Received event: {} for profile: {}", payload.event_type, payload.profile_name);
-
     let app = app.lock().await;
-
     let pet_state = map_event_to_pet_state(&payload.event_type);
-
-    // Emit pet_state_event to frontend with the mapped state
     if let Err(e) = app.emit("pet_state_event", pet_state) {
         eprintln!("[webhook] Failed to emit pet_state_event: {}", e);
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
-
-    // Also emit the raw event for compatibility
     if let Err(e) = app.emit("hermes_event", &payload) {
         eprintln!("[webhook] Failed to emit hermes_event: {}", e);
     }
-
     Ok(Json(WebhookResponse {
         status: "ok".to_string(),
         message: format!("Event {} mapped to pet state: {}", payload.event_type, pet_state),
@@ -72,17 +67,13 @@ async fn handle_webhook(
 
 async fn start_webhook_server(app_handle: tauri::AppHandle) {
     let app = Arc::new(Mutex::new(app_handle));
-
     let router = Router::new()
         .route("/api/webhook", post(handle_webhook))
         .with_state(app);
-
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", WEBHOOK_PORT))
         .await
         .expect("Failed to bind webhook server");
-
     eprintln!("[webhook] Server listening on http://127.0.0.1:{}", WEBHOOK_PORT);
-
     axum::serve(listener, router)
         .await
         .expect("Webhook server failed");
@@ -114,6 +105,89 @@ fn get_mouse_pos(app: tauri::AppHandle, window: tauri::Window) -> Result<(f64, f
     }
 }
 
+/// Build the system tray menu
+fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+    let show_pet = CheckMenuItemBuilder::new("Show Pet")
+        .id("show_pet")
+        .checked(true)
+        .build(app)?;
+    let sounds = CheckMenuItemBuilder::new("Sounds")
+        .id("sounds")
+        .checked(true)
+        .build(app)?;
+    let follow_mouse = CheckMenuItemBuilder::new("Follow Mouse")
+        .id("follow_mouse")
+        .checked(true)
+        .build(app)?;
+
+    let sep1 = tauri::menu::PredefinedMenuItem::separator(app)?;
+
+    // Theme items (radio-style via checkable)
+    let theme_midnight = CheckMenuItemBuilder::new("Theme: Midnight")
+        .id("theme_midnight")
+        .checked(true)
+        .build(app)?;
+    let theme_peach = CheckMenuItemBuilder::new("Theme: Peach")
+        .id("theme_peach")
+        .checked(false)
+        .build(app)?;
+    let theme_cloud = CheckMenuItemBuilder::new("Theme: Cloud")
+        .id("theme_cloud")
+        .checked(false)
+        .build(app)?;
+    let theme_moss = CheckMenuItemBuilder::new("Theme: Moss")
+        .id("theme_moss")
+        .checked(false)
+        .build(app)?;
+
+    let sep2 = tauri::menu::PredefinedMenuItem::separator(app)?;
+
+    // Size items
+    let size_small = CheckMenuItemBuilder::new("Size: Small")
+        .id("size_small")
+        .checked(false)
+        .build(app)?;
+    let size_medium = CheckMenuItemBuilder::new("Size: Medium")
+        .id("size_medium")
+        .checked(true)
+        .build(app)?;
+    let size_large = CheckMenuItemBuilder::new("Size: Large")
+        .id("size_large")
+        .checked(false)
+        .build(app)?;
+
+    let sep3 = tauri::menu::PredefinedMenuItem::separator(app)?;
+
+    let sessions = MenuItemBuilder::with_id("sessions", "Active Sessions...")
+        .enabled(true)
+        .build(app)?;
+    let sep4 = tauri::menu::PredefinedMenuItem::separator(app)?;
+    let quit = MenuItemBuilder::with_id("quit", "Quit")
+        .accelerator("CmdOrCtrl+Q")
+        .build(app)?;
+
+    let menu = MenuBuilder::new(app)
+        .item(&show_pet)
+        .item(&sounds)
+        .item(&follow_mouse)
+        .append(&sep1)?
+        .item(&theme_midnight)
+        .item(&theme_peach)
+        .item(&theme_cloud)
+        .item(&theme_moss)
+        .append(&sep2)?
+        .item(&size_small)
+        .item(&size_medium)
+        .item(&size_large)
+        .append(&sep3)?
+        .item(&sessions)
+        .append(&sep4)?
+        .item(&quit)
+        .build()?;
+
+    Ok(menu)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
     tauri::Builder::default()
@@ -131,32 +205,7 @@ pub async fn run() {
                 }
             }
 
-            // Build system tray
-            let char_toggle = CheckMenuItemBuilder::new("Show Pet")
-                .id("show_pet")
-                .checked(true)
-                .build(app)?;
-
-            let sounds_item = CheckMenuItemBuilder::new("Sounds")
-                .id("sounds")
-                .checked(true)
-                .build(app)?;
-
-            let quit_i = MenuItemBuilder::with_id("quit", "Quit")
-                .accelerator("CmdOrCtrl+Q")
-                .build(app)?;
-
-            let menu = MenuBuilder::new(app)
-                .item(&char_toggle)
-                .item(&sounds_item)
-                .separator()
-                .item(&quit_i)
-                .build()?;
-
-            let show_pet_state = std::sync::Arc::new(std::sync::Mutex::new(true));
-            let show_pet_state_clone = show_pet_state.clone();
-
-            // Create a simple tray icon from raw RGBA bytes
+            // Build tray icon from raw RGBA bytes (purple circle)
             let size: u32 = 32;
             let mut rgba = Vec::new();
             for y in 0..size {
@@ -175,6 +224,8 @@ pub async fn run() {
             }
             let tray_icon = Image::new(&rgba, size, size);
 
+            let menu = build_tray_menu(app.handle())?;
+
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(tray_icon)
                 .menu(&menu)
@@ -182,12 +233,37 @@ pub async fn run() {
                     let id = event.id.as_ref();
                     match id {
                         "show_pet" => {
-                            let mut state = show_pet_state_clone.lock().unwrap();
-                            *state = !*state;
                             app.emit("tray_event", id).unwrap_or_default();
                         }
                         "sounds" => {
                             app.emit("tray_event", id).unwrap_or_default();
+                        }
+                        "follow_mouse" => {
+                            app.emit("tray_event", id).unwrap_or_default();
+                        }
+                        "theme_midnight" => {
+                            app.emit("tray_event", "theme:midnight").unwrap_or_default();
+                        }
+                        "theme_peach" => {
+                            app.emit("tray_event", "theme:peach").unwrap_or_default();
+                        }
+                        "theme_cloud" => {
+                            app.emit("tray_event", "theme:cloud").unwrap_or_default();
+                        }
+                        "theme_moss" => {
+                            app.emit("tray_event", "theme:moss").unwrap_or_default();
+                        }
+                        "size_small" => {
+                            app.emit("tray_event", "size:small").unwrap_or_default();
+                        }
+                        "size_medium" => {
+                            app.emit("tray_event", "size:medium").unwrap_or_default();
+                        }
+                        "size_large" => {
+                            app.emit("tray_event", "size:large").unwrap_or_default();
+                        }
+                        "sessions" => {
+                            app.emit("tray_event", "sessions").unwrap_or_default();
                         }
                         "quit" => {
                             app.exit(0);
@@ -204,7 +280,6 @@ pub async fn run() {
             get_mouse_pos,
             set_ignore_cursor_events,
         ])
-        // Start webhook server in background using Tauri async runtime
         .setup(|app| {
             tauri::async_runtime::spawn(start_webhook_server(app.handle().clone()));
             Ok(())
