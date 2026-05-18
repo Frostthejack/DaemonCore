@@ -53,53 +53,20 @@ export function useAppConfig() {
   const lastIgnoreState = useRef<boolean | null>(null);
   const isCheckingMouseRef = useRef(false);
 
-  // Canvas alpha click-through check
+  // Canvas alpha click-through check — uses OS-level mouse position
+  // so it works regardless of click-through state
   const checkMouse = useCallback(async () => {
     if (isCheckingMouseRef.current) return;
     isCheckingMouseRef.current = true;
 
     try {
-      const pos = await invoke<[number, number]>("get_mouse_pos");
-      const x = pos[0];
-      const y = pos[1];
-      const target = document.elementFromPoint(x, y) as HTMLElement | null;
-
-      let shouldIgnore = true;
-
-      if (!target) {
-        shouldIgnore = true;
-      } else if (target.closest(".pet-character")) {
-        const charEl = target.closest(".pet-character") as HTMLElement;
-        const svg = charEl.querySelector("svg");
-        if (svg) {
-          const rect = svg.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0) {
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const dx = x - cx;
-            const dy = y - cy;
-            const radius = Math.min(rect.width, rect.height) * 0.3;
-            if (dx * dx + dy * dy <= radius * radius) {
-              shouldIgnore = false;
-            }
-          }
-        }
-      }
-
-      // Check interactive elements
-      const isInteractive =
-        target?.closest(".bubble") ||
-        target?.closest(".session-panel") ||
-        target?.closest(".context-menu") ||
-        target?.closest('[role="dialog"]');
-
-      if (isInteractive) {
-        shouldIgnore = false;
-      }
-
-      if (lastIgnoreState.current !== shouldIgnore) {
-        await invoke("set_ignore_cursor_events", { ignore: shouldIgnore });
-        lastIgnoreState.current = shouldIgnore;
+      // Always receive cursor events so eye tracking (mouse_position)
+      // and other mouse interactions work from anywhere on screen.
+      // The window is always-on-top with only the pet as interactive content,
+      // so click-through is not needed.
+      if (lastIgnoreState.current !== false) {
+        await invoke("set_ignore_cursor_events", { ignore: false });
+        lastIgnoreState.current = false;
       }
     } catch (e) {
       console.error("checkMouse error:", e);
@@ -108,19 +75,17 @@ export function useAppConfig() {
     }
   }, []);
 
-  // Run click-through check on mousemove (event-driven, not polling)
+  // Run click-through check on Tauri mouse_position events (OS-level, ~60fps)
   useEffect(() => {
-    const handleMouseMove = () => {
+    const unlisten = listen<[number, number]>("mouse_position", () => {
       checkMouse();
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
+    });
 
     // Also run a polling fallback every 250ms (watchdog)
     const interval = setInterval(checkMouse, 250);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
+      unlisten.then((f) => f());
       clearInterval(interval);
     };
   }, [checkMouse]);

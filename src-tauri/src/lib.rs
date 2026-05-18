@@ -1,7 +1,6 @@
 use tauri::{
     menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder},
-    tray::TrayIconBuilder,
-    image::Image, Manager, Emitter, AppHandle,
+    tray::TrayIconBuilder, Manager, Emitter, AppHandle,
 };
 use axum::{
     routing::post,
@@ -12,6 +11,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use std::time::Duration;
 
 /// Port for the webhook server
 const WEBHOOK_PORT: u16 = 32947;
@@ -105,6 +105,31 @@ fn get_mouse_pos(app: tauri::AppHandle, window: tauri::Window) -> Result<(f64, f
     }
 }
 
+/// Spawn a background task that polls the OS mouse position and emits
+/// a `mouse_position` event at ~60 Hz.  This works even when the window
+/// has `set_ignore_cursor_events(true)` because it uses the Tauri
+/// `cursor_position()` API which queries the OS directly.
+/// Emits viewport-relative (client) coordinates for use in the frontend.
+fn start_mouse_tracker(app_handle: tauri::AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        loop {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                if let Ok(pos) = app_handle.cursor_position() {
+                    let scale_factor = window.scale_factor().unwrap_or(1.0);
+                    let screen_logical = pos.to_logical::<f64>(scale_factor);
+                    // Convert screen coordinates to viewport-relative (client) coordinates
+                    let window_physical = window.inner_position().unwrap_or(tauri::PhysicalPosition::new(0, 0));
+                    let window_logical = window_physical.to_logical::<f64>(scale_factor);
+                    let client_x = screen_logical.x - window_logical.x;
+                    let client_y = screen_logical.y - window_logical.y;
+                    let _ = app_handle.emit("mouse_position", (client_x, client_y));
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(16)).await; // ~60 fps
+        }
+    });
+}
+
 /// Build the system tray menu
 fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
     let show_pet = CheckMenuItemBuilder::new("Show Pet")
@@ -187,16 +212,29 @@ pub async fn run() {
         .setup(|app| {
             // Set window to cover primary monitor
             if let Some(window) = app.get_webview_window("main") {
-                if let Ok(Some(monitor)) = window.primary_monitor() {
-                    let size = monitor.size();
-                    if let Err(e) = window.set_size(*size) {
-                        eprintln!("Failed setting window size: {}", e);
-                    }
-                    if let Err(e) = window.set_position(tauri::PhysicalPosition::new(monitor.position().x, monitor.position().y)) {
-                        eprintln!("Failed setting window position: {}", e);
-                    }
+                // Use maximize() which is more reliable than manual sizing
+                // and handles multi-monitor setups correctly
+                if let Err(e) = window.maximize() {
+                    eprintln!("[setup] Failed to maximize window: {}", e);
+                    // Fallback: try manual resize after a brief delay
+                    let window_clone = window.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(Duration::from_millis(100)).await;
+                        if let Ok(Some(monitor)) = window_clone.primary_monitor() {
+                            let size = monitor.size();
+                            let pos = monitor.position();
+                            eprintln!("[setup] Fallback resize: size={:?} pos={:?}", size, pos);
+                            let _ = window_clone.set_size(*size);
+                            let _ = window_clone.set_position(tauri::PhysicalPosition::new(pos.x, pos.y));
+                        }
+                    });
                 }
             }
+            // Start webhook server
+            tauri::async_runtime::spawn(start_webhook_server(app.handle().clone()));
+
+            // Start mouse tracker
+            start_mouse_tracker(app.handle().clone());
 
             // Build tray icon from raw RGBA bytes (purple circle)
             let size: u32 = 32;
@@ -215,7 +253,7 @@ pub async fn run() {
                     }
                 }
             }
-            let tray_icon = Image::new(&rgba, size, size);
+            let tray_icon = tauri::image::Image::new_owned(rgba, size, size);
 
             let menu = build_tray_menu(app.handle())?;
 
@@ -273,10 +311,6 @@ pub async fn run() {
             get_mouse_pos,
             set_ignore_cursor_events,
         ])
-        .setup(|app| {
-            tauri::async_runtime::spawn(start_webhook_server(app.handle().clone()));
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

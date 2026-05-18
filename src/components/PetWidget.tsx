@@ -3,6 +3,7 @@ import { usePetMovement } from "../hooks/usePetMovement";
 import { usePetSystemStore } from "../store/petSystem";
 import { CharacterRenderer } from "./characters/CharacterRenderer";
 import type { PetName, PetState } from "../types/pet";
+import { listen } from "@tauri-apps/api/event";
 
 interface PetWidgetProps {
   petName: PetName;
@@ -114,42 +115,63 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
   }, []);
 
   // Eye tracking — follow cursor with smooth lerp
+  // Uses OS-level mouse position via Tauri event so it works even when
+  // the window has set_ignore_cursor_events(true) for click-through.
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!widgetRef.current) return;
-      const rect = widgetRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+    let unlisten: (() => void) | null = null;
 
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+    const setupListener = async () => {
+      unlisten = await listen<[number, number]>("mouse_position", (event) => {
+        if (!widgetRef.current) return;
+        const rect = widgetRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
 
-      // Normalize to max offset of 6px
-      const maxOffset = 6;
-      const maxDistance = 500;
-      const factor = Math.min(distance / maxDistance, 1);
+        // event.payload is (screenX, screenY) in logical pixels
+        const screenX = event.payload[0];
+        const screenY = event.payload[1];
 
-      setEyeOffset({
-        x: (dx / (distance || 1)) * maxOffset * factor,
-        y: (dy / (distance || 1)) * maxOffset * factor,
+        const dx = screenX - centerX;
+        const dy = screenY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Normalize to max offset of 6px
+        const maxOffset = 6;
+        const maxDistance = 500;
+        const factor = Math.min(distance / maxDistance, 1);
+
+        setEyeOffset({
+          x: (dx / (distance || 1)) * maxOffset * factor,
+          y: (dy / (distance || 1)) * maxOffset * factor,
+        });
       });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, [widgetRef]);
 
   // Follow mouse mode — pet follows cursor at set distance
   useEffect(() => {
     if (!followMouse || isDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      setFollowTarget({ x: e.clientX, y: e.clientY });
+    let unlisten: (() => void) | null = null;
+
+    const setupListener = async () => {
+      unlisten = await listen<[number, number]>("mouse_position", (event) => {
+        setFollowTarget({ x: event.payload[0], y: event.payload[1] });
+      });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+      setFollowTarget(null);
+    };
   }, [followMouse, isDragging]);
 
   // Expose controls via ref for external access
