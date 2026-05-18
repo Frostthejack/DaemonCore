@@ -1,6 +1,6 @@
 # DaemonCore — Project State
 
-> Last updated: 2026-05-17
+> Last updated: 2026-05-18
 
 ## Overview
 
@@ -8,9 +8,9 @@ DaemonCore is a desktop AI companion system built with Tauri 2 + React 19. Anima
 
 **Repository:** https://github.com/Frostthejack/DaemonCore
 
-## Current Status: Phase 3 In Progress
+## Current Status: Phase 4 In Progress
 
-Phase 3 ("AI Integration & Polish") is largely complete. The webhook server, settings panel, session panel, follow-mouse physics, and frontend webhook integration are all implemented and pushed to GitHub. The remaining work is the Phase 3 review gate (T3.9).
+Phase 3 ("AI Integration & Polish") is fully complete — all tasks including the Phase 3 review gate are done. Phase 4 ("Enhancements & Polish") has been decomposed into 6 tasks on the kanban board.
 
 ### Phase 1 — Complete
 - Scaffolded Tauri 2 + React + TypeScript app
@@ -24,19 +24,30 @@ Phase 3 ("AI Integration & Polish") is largely complete. The webhook server, set
 - Priority state machine for pet behaviors
 - Zustand store with localStorage persistence
 
-### Phase 3 — In Progress (8/9 tasks done)
+### Phase 3 — Complete
+- GitHub repo created and pushed
+- Axum webhook server (Rust backend)
+- Hermes event → pet state mapping
+- Settings panel (theme, size, sounds toggle, follow-mouse)
+- Session panel (UI complete, placeholder data)
+- Follow-mouse physics with distance threshold
+- Frontend webhook → Zustand state sync
+- Click-through transparency system
+- System tray menu
+- Phase 3 review gate passed
 
-| Task | Description | Status |
-|------|-------------|--------|
-| T3.1 | Create GitHub repo and push | Done |
-| T3.2 | Add axum webhook server (Rust) | Done |
-| T3.3 | Map Hermes events to pet states | Done |
-| T3.4 | Create settings panel component | Done |
-| T3.5 | Create session panel component | Done |
-| T3.6 | Implement follow-mouse physics | Done |
-| T3.7 | Integrate webhook to frontend state sync | Done |
-| T3.8 | Update project-state.md and docs | In Progress (this file) |
-| T3.9 | Phase 3 Review Gate | Pending |
+### Phase 4 — In Progress (6 tasks)
+
+| ID | Task | Assignee | Status |
+|----|------|----------|--------|
+| t_7f8c87b2 | Enhanced state mapping: granular sub-states for tool-specific reactions | backend-eng | ready |
+| t_003da138 | Sound system: audio playback for pet state changes | frontend-eng | ready |
+| t_7613e430 | Real session data: populate SessionPanel with actual Hermes sessions | frontend-eng | ready |
+| t_b8db951f | Webhook authentication: token-based auth for /api/webhook | backend-eng | ready |
+| t_f6017620 | Animation variety: multiple animation variants per pet state | frontend-eng | ready |
+| t_009a153b | Phase 4 Review Gate | reviewer | blocked (parents: all above) |
+
+**Research basis:** Phase 4 priorities informed by analysis of the hermes-visualizer-plugin (https://github.com/rwcrosk-arch/hermes-visualizer-plugin). See docs/research/hermes-visualizer-plugin-analysis.md for full research document.
 
 ## Architecture
 
@@ -79,10 +90,10 @@ Hermes Agent → POST /api/webhook → Rust axum server → Tauri event emit →
 
 ## What's Pending
 
-- **T3.9 Phase 3 Review Gate**: Full review of all Phase 3 work before considering it done
+- **Phase 4 tasks**: 5 implementation tasks + 1 review gate on the kanban board
 - **Cross-compilation**: Final Windows build (currently builds for `x86_64-pc-windows-gnu`)
-- **Sound system**: Sounds toggle exists in UI but no actual audio playback is implemented
-- **Session panel population**: Session panel shows active pets but doesn't yet receive real session data from Hermes (placeholder implementation)
+- **Multi-monitor support**: Window sizing uses `primary_monitor()` — multi-monitor setups may have the window appear on the wrong screen
+- **Backup/export**: Pet state and settings are persisted to localStorage only. No backup/export mechanism exists
 
 ## Build Instructions
 
@@ -137,8 +148,11 @@ DaemonCore/
 │   │   └── pet_state_machine.rs
 │   ├── Cargo.toml            # Rust dependencies
 │   └── capabilities/         # Tauri capabilities
-├── docs/plans/
-│   └── phase-3-ai-integration.md  # Phase 3 plan
+├── docs/
+│   ├── plans/
+│   │   └── phase-3-ai-integration.md  # Phase 3 plan
+│   └── research/
+│       └── hermes-visualizer-plugin-analysis.md  # Phase 4 research
 ├── package.json
 ├── vite.config.ts
 └── tsconfig.json
@@ -146,19 +160,15 @@ DaemonCore/
 
 ## Known Issues
 
-1. **State mapping case mismatch**: Rust backend emits capitalized states ("Idle", "Thinking", etc.) while frontend expects lowercase ("idle", "thinking", etc.). The frontend `HERMES_EVENT_TO_PET_STATE` map uses lowercase keys, so the Rust-emitted `pet_state_event` with capitalized values won't match the frontend's expected `PetState` type. The `hermes_event` listener does its own mapping, so this is partially mitigated, but direct `pet_state_event` consumers would see a mismatch.
+1. **State mapping case mismatch**: Rust backend emits capitalized states ("Idle", "Thinking", etc.) while frontend expects lowercase ("idle", "thinking", etc.). The frontend `HERMES_EVENT_TO_PET_STATE` map uses lowercase keys, so the Rust-emitted `pet_state_event` with capitalized values won't match the frontend's expected `PetState` type. The `hermes_event` listener does its own mapping, so this is partially mitigated, but direct `pet_state_event` consumers would see a mismatch. *(Being addressed by Phase 4 enhanced state mapping task)*
 
-2. **Session panel uses placeholder data**: The SessionPanel derives sessions from active pets rather than from actual Hermes session data. Real session tracking would require the webhook to emit session lifecycle events.
+2. **Single-monitor assumption**: Window sizing uses `primary_monitor()` — multi-monitor setups may have the window appear on the wrong screen.
 
-3. **No sound implementation**: The sounds toggle and `isSoundsEnabled` state exist but no audio files or playback logic have been added.
+3. **Webhook server binds to 127.0.0.1 only**: The axum server listens on localhost, so external machines cannot send webhook events. This is intentional for security but means Hermes must run on the same machine.
 
-4. **Single-monitor assumption**: Window sizing uses `primary_monitor()` — multi-monitor setups may have the window appear on the wrong screen.
+4. **No webhook authentication**: The `/api/webhook` endpoint accepts any POST request with no auth token or secret validation. *(Being addressed by Phase 4 webhook auth task)*
 
-5. **Webhook server binds to 127.0.0.1 only**: The axum server listens on localhost, so external machines cannot send webhook events. This is intentional for security but means Hermes must run on the same machine.
-
-6. **No webhook authentication**: The `/api/webhook` endpoint accepts any POST request with no auth token or secret validation.
-
-7. **localStorage only**: Pet state and settings are persisted to localStorage only. No backup/export mechanism exists.
+5. **localStorage only**: Pet state and settings are persisted to localStorage only. No backup/export mechanism exists.
 
 ## Tech Stack
 

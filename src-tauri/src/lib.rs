@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::time::Duration;
+use std::collections::HashMap;
 
 /// Port for the webhook server
 const WEBHOOK_PORT: u16 = 32947;
@@ -111,11 +112,104 @@ fn get_mouse_pos(app: tauri::AppHandle) -> Result<(f64, f64), String> {
     }
 }
 
+/// Pet bounding box for hit-testing
+/// Pet character is 150x150px at medium scale, scaled by size factor
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PetBoundingBox {
+    pub profile_name: String,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+impl PetBoundingBox {
+    /// Check if a point is inside this bounding box
+    pub fn contains(&self, px: f64, py: f64) -> bool {
+        px >= self.x && px <= self.x + self.width
+            && py >= self.y && py <= self.y + self.height
+    }
+}
+
+/// Global pet position storage - shared between Tauri commands and mouse tracker
+pub struct PetPositionStore {
+    pets: Mutex<HashMap<String, PetBoundingBox>>,
+}
+
+impl PetPositionStore {
+    pub fn new() -> Self {
+        Self {
+            pets: Mutex::new(HashMap::new()),
+        }
+    }
+
+    pub async fn update(&self, bbox: PetBoundingBox) {
+        let mut pets = self.pets.lock().await;
+        pets.insert(bbox.profile_name.clone(), bbox);
+    }
+
+    pub async fn remove(&self, profile_name: &str) {
+        let mut pets = self.pets.lock().await;
+        pets.remove(profile_name);
+    }
+
+    pub async fn get_all(&self) -> Vec<PetBoundingBox> {
+        self.pets.lock().await.values().cloned().collect()
+    }
+
+    pub async fn check_hit(&self, x: f64, y: f64) -> bool {
+        let pets = self.pets.lock().await;
+        for bbox in pets.values() {
+            if bbox.contains(x, y) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+/// Global store instance
+static PET_STORE: std::sync::OnceLock<Arc<PetPositionStore>> = std::sync::OnceLock::new();
+
+fn get_pet_store() -> &'static Arc<PetPositionStore> {
+    PET_STORE.get_or_init(|| Arc::new(PetPositionStore::new()))
+}
+
+/// Tauri command to update pet position from frontend
+#[tauri::command]
+async fn update_pet_position(
+    profile_name: String,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    let bbox = PetBoundingBox {
+        profile_name,
+        x,
+        y,
+        width,
+        height,
+    };
+    get_pet_store().update(bbox).await;
+    Ok(())
+}
+
+/// Tauri command to remove pet (when it's closed)
+#[tauri::command]
+async fn remove_pet_position(profile_name: String) -> Result<(), String> {
+    get_pet_store().remove(&profile_name).await;
+    Ok(())
+}
+
 /// Spawn a background task that polls the OS mouse position and emits
 /// a `mouse_position` event at ~60 Hz.  This works even when the window
 /// has `set_ignore_cursor_events(true)` because it uses the Tauri
 /// `cursor_position()` API which queries the OS directly.
 /// Emits viewport-relative (client) coordinates for use in the frontend.
+/// 
+/// Also performs hit-testing against pet bounding boxes to toggle
+/// click-through state synchronously.
 fn start_mouse_tracker(app_handle: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         loop {
@@ -129,6 +223,24 @@ fn start_mouse_tracker(app_handle: tauri::AppHandle) {
                     let client_x = screen_logical.x - window_logical.x;
                     let client_y = screen_logical.y - window_logical.y;
                     let _ = app_handle.emit("mouse_position", (client_x, client_y));
+                    
+                    // Hit-testing: check if cursor is over any pet
+                    // Pet size is 150x150px at medium scale, centered on position
+                    // We need to check if cursor is within the pet's bounds
+                    let pets = get_pet_store().get_all().await;
+                    let mut should_ignore = true;
+                    
+                    for pet in &pets {
+                        if pet.contains(client_x, client_y) {
+                            should_ignore = false;
+                            break;
+                        }
+                    }
+                    
+                    // Update click-through state
+                    if let Err(e) = window.set_ignore_cursor_events(should_ignore) {
+                        eprintln!("[mouse_tracker] Failed to set ignore cursor events: {}", e);
+                    }
                 }
             }
             tokio::time::sleep(Duration::from_millis(16)).await; // ~60 fps
@@ -328,6 +440,8 @@ pub async fn run() {
         .invoke_handler(tauri::generate_handler![
             get_mouse_pos,
             set_ignore_cursor_events,
+            update_pet_position,
+            remove_pet_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

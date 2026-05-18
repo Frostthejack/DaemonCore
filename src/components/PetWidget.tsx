@@ -4,6 +4,7 @@ import { usePetSystemStore } from "../store/petSystem";
 import { CharacterRenderer } from "./characters/CharacterRenderer";
 import type { PetName, PetState } from "../types/pet";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 interface PetWidgetProps {
   petName: PetName;
@@ -97,9 +98,29 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
     usePetMovement({ petName, size: "medium", initialX, followTarget, followDistance: followDistance });
 
   // Sync position to store for click-through bounding-box checks
+  // Also sync to Rust backend for hit-testing
   useEffect(() => {
     setPetPosition(profileName, position.x, position.y);
-  }, [position.x, position.y, profileName, setPetPosition]);
+    
+    // Sync to Rust backend for hit-testing
+    // Pet character is 150x150px at medium scale, centered on position
+    const scale = getSizeScale();
+    const width = 150 * scale;
+    const height = 150 * scale;
+    // Position is center, so top-left is position - width/2, height/2
+    const x = position.x - width / 2;
+    const y = position.y - height / 2;
+    
+    invoke("update_pet_position", {
+      profileName,
+      x,
+      y,
+      width,
+      height,
+    }).catch((e) => {
+      console.error("[PetWidget] Failed to update pet position in Rust:", e);
+    });
+  }, [position.x, position.y, profileName, setPetPosition, getSizeScale]);
 
   const [currentState, setCurrentState] = useState<PetState>("idle");
   const [bubbleText, setBubbleText] = useState<string | null>(null);
