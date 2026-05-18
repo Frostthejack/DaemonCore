@@ -28,8 +28,8 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
-  /* Nearly transparent but still captures mouse events */
-  background-color: rgba(0, 0, 0, 0.01);
+  /* Fully transparent - click-through requires no opaque hit target */
+  background-color: transparent;
 }
 
 /* ─── Pet Widget ───────────────────────────────────────────── */

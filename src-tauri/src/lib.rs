@@ -90,16 +90,22 @@ fn set_ignore_cursor_events(app: tauri::AppHandle, ignore: bool) -> Result<(), S
 }
 
 #[tauri::command]
-fn get_mouse_pos(app: tauri::AppHandle, window: tauri::Window) -> Result<(f64, f64), String> {
+fn get_mouse_pos(app: tauri::AppHandle) -> Result<(f64, f64), String> {
     match app.cursor_position() {
         Ok(pos) => {
-            let scale_factor = window.scale_factor().unwrap_or(1.0);
-            let screen_logical = pos.to_logical::<f64>(scale_factor);
-            let window_physical = window.inner_position().unwrap_or(tauri::PhysicalPosition::new(0, 0));
-            let window_logical = window_physical.to_logical::<f64>(scale_factor);
-            let client_x = screen_logical.x - window_logical.x;
-            let client_y = screen_logical.y - window_logical.y;
-            Ok((client_x, client_y))
+            // Get the main window to calculate viewport-relative coordinates
+            if let Some(window) = app.get_webview_window("main") {
+                let scale_factor = window.scale_factor().unwrap_or(1.0);
+                let screen_logical = pos.to_logical::<f64>(scale_factor);
+                let window_physical = window.inner_position().unwrap_or(tauri::PhysicalPosition::new(0, 0));
+                let window_logical = window_physical.to_logical::<f64>(scale_factor);
+                let client_x = screen_logical.x - window_logical.x;
+                let client_y = screen_logical.y - window_logical.y;
+                Ok((client_x, client_y))
+            } else {
+                // Fallback: return screen coordinates if window not found
+                Ok((pos.x, pos.y))
+            }
         }
         Err(e) => Err(e.to_string()),
     }
@@ -210,24 +216,36 @@ fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wr
 pub async fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            // Set window to cover primary monitor
+            // Set window to cover primary monitor while preserving transparency
+            // Note: maximize() breaks transparency on Windows DWM, so we use manual sizing
             if let Some(window) = app.get_webview_window("main") {
-                // Use maximize() which is more reliable than manual sizing
-                // and handles multi-monitor setups correctly
-                if let Err(e) = window.maximize() {
-                    eprintln!("[setup] Failed to maximize window: {}", e);
-                    // Fallback: try manual resize after a brief delay
-                    let window_clone = window.clone();
-                    tauri::async_runtime::spawn(async move {
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                        if let Ok(Some(monitor)) = window_clone.primary_monitor() {
+                if let Ok(Some(monitor)) = window.primary_monitor() {
+                    let size = monitor.size();
+                    let pos = monitor.position();
+                    eprintln!("[setup] Setting window size={:?} pos={:?}", size, pos);
+                    if let Err(e) = window.set_size(*size) {
+                        eprintln!("[setup] Failed to set window size: {}", e);
+                    }
+                    if let Err(e) = window.set_position(tauri::PhysicalPosition::new(pos.x, pos.y)) {
+                        eprintln!("[setup] Failed to set window position: {}", e);
+                    }
+                } else {
+                    eprintln!("[setup] Failed to get primary monitor, using fallback");
+                    // Fallback: try to get monitor from available monitors
+                    if let Ok(monitors) = window.available_monitors() {
+                        if let Some(monitor) = monitors.into_iter().next() {
                             let size = monitor.size();
                             let pos = monitor.position();
-                            eprintln!("[setup] Fallback resize: size={:?} pos={:?}", size, pos);
-                            let _ = window_clone.set_size(*size);
-                            let _ = window_clone.set_position(tauri::PhysicalPosition::new(pos.x, pos.y));
+                            let _ = window.set_size(*size);
+                            let _ = window.set_position(tauri::PhysicalPosition::new(pos.x, pos.y));
                         }
-                    });
+                    }
+                }
+            }
+            // Enable click-through by default for transparent window
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(e) = window.set_ignore_cursor_events(true) {
+                    eprintln!("[setup] Failed to set ignore cursor events: {}", e);
                 }
             }
             // Start webhook server

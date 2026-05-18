@@ -89,11 +89,17 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
 
   const characterId = usePetSystemStore((s) => s.getCharacterForProfile(profileName));
   const setPetState = usePetSystemStore((s) => s.setPetState);
+  const setPetPosition = usePetSystemStore((s) => s.setPetPosition);
   const followMouse = usePetSystemStore((s) => s.followMouse);
   const followDistance = usePetSystemStore((s) => s.followDistance);
 
   const { position, isDragging, directionRef, widgetRef, handleMouseDown, getSizeScale } =
     usePetMovement({ petName, size: "medium", initialX, followTarget, followDistance: followDistance });
+
+  // Sync position to store for click-through bounding-box checks
+  useEffect(() => {
+    setPetPosition(profileName, position.x, position.y);
+  }, [position.x, position.y, profileName, setPetPosition]);
 
   const [currentState, setCurrentState] = useState<PetState>("idle");
   const [bubbleText, setBubbleText] = useState<string | null>(null);

@@ -9,7 +9,7 @@
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
-  "app": {
+"app": {
     "windows": [
       {
         "title": "DaemonCore",
@@ -18,7 +18,8 @@
         "alwaysOnTop": true,
         "resizable": true,
         "visible": true,
-        "shadow": false
+        "shadow": false,
+        "background": false
       }
     ],
     "macOSPrivateApi": true,
