@@ -18,8 +18,7 @@
         "alwaysOnTop": true,
         "resizable": true,
         "visible": true,
-        "shadow": false,
-        "background": false
+        "shadow": false
       }
     ],
     "macOSPrivateApi": true,
