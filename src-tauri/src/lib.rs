@@ -120,8 +120,6 @@ fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wr
         .checked(true)
         .build(app)?;
 
-    let sep1 = tauri::menu::PredefinedMenuItem::separator(app)?;
-
     // Theme items (radio-style via checkable)
     let theme_midnight = CheckMenuItemBuilder::new("Theme: Midnight")
         .id("theme_midnight")
@@ -140,8 +138,6 @@ fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wr
         .checked(false)
         .build(app)?;
 
-    let sep2 = tauri::menu::PredefinedMenuItem::separator(app)?;
-
     // Size items
     let size_small = CheckMenuItemBuilder::new("Size: Small")
         .id("size_small")
@@ -156,12 +152,9 @@ fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wr
         .checked(false)
         .build(app)?;
 
-    let sep3 = tauri::menu::PredefinedMenuItem::separator(app)?;
-
     let sessions = MenuItemBuilder::with_id("sessions", "Active Sessions...")
         .enabled(true)
         .build(app)?;
-    let sep4 = tauri::menu::PredefinedMenuItem::separator(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Quit")
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
@@ -170,18 +163,18 @@ fn build_tray_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wr
         .item(&show_pet)
         .item(&sounds)
         .item(&follow_mouse)
-        .append(&sep1)?
+        .separator()
         .item(&theme_midnight)
         .item(&theme_peach)
         .item(&theme_cloud)
         .item(&theme_moss)
-        .append(&sep2)?
+        .separator()
         .item(&size_small)
         .item(&size_medium)
         .item(&size_large)
-        .append(&sep3)?
+        .separator()
         .item(&sessions)
-        .append(&sep4)?
+        .separator()
         .item(&quit)
         .build()?;
 
