@@ -13,6 +13,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::time::Duration;
 use std::collections::HashMap;
+use uuid::Uuid;
+use std::fs;
 
 /// Port for the webhook server
 const WEBHOOK_PORT: u16 = 32947;
@@ -33,6 +35,100 @@ struct WebhookResponse {
     message: String,
 }
 
+/// Webhook token storage - holds the auth token for the webhook endpoint
+pub struct WebhookTokenStore {
+    token: Mutex<String>,
+}
+
+impl WebhookTokenStore {
+    pub fn new() -> Self {
+        Self {
+            token: Mutex::new(String::new()),
+        }
+    }
+
+    pub async fn get(&self) -> String {
+        self.token.lock().await.clone()
+    }
+
+    pub async fn set(&self, token: String) {
+        *self.token.lock().await = token;
+    }
+}
+
+/// Global token store instance
+static TOKEN_STORE: std::sync::OnceLock<Arc<WebhookTokenStore>> = std::sync::OnceLock::new();
+
+fn get_token_store() -> &'static Arc<WebhookTokenStore> {
+    TOKEN_STORE.get_or_init(|| Arc::new(WebhookTokenStore::new()))
+}
+
+/// Load or generate the webhook auth token
+/// Token is stored in the app config directory and persists across restarts
+fn load_or_generate_token(app: &AppHandle) -> String {
+    let token_path = app
+        .path()
+        .app_config_dir()
+        .map(|p| p.join("webhook_token.txt"))
+        .unwrap_or_else(|_| std::path::PathBuf::from("webhook_token.txt"));
+
+    // Try to read existing token
+    if let Ok(token) = fs::read_to_string(&token_path) {
+        let trimmed = token.trim();
+        if !trimmed.is_empty() {
+            eprintln!("[webhook] Loaded existing token from {:?}", token_path);
+            return trimmed.to_string();
+        }
+    }
+
+    // Generate new token
+    let new_token = Uuid::new_v4().to_string();
+    eprintln!("[webhook] Generated new token: {}", new_token);
+
+    // Save token to file
+    if let Some(parent) = token_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(&token_path, &new_token);
+
+    new_token
+}
+
+/// Maps tool names to granular sub-states for pet reactions
+/// Inspired by hermes-visualizer-plugin's mood detection approach
+/// parent_state is used to disambiguate tools like execute_code that have different
+/// meanings depending on context (working vs thinking)
+fn map_tool_to_substate(tool_name: &str, parent_state: &str) -> Option<&'static str> {
+    match tool_name {
+        // Terminal operations -> terminal_work
+        "terminal" | "patch" | "git" => Some("terminal_work"),
+        // Code operations - depends on parent state
+        "execute_code" => {
+            // When parent is "thinking", use analyzing; otherwise code_work
+            if parent_state == "thinking" {
+                Some("analyzing")
+            } else {
+                Some("code_work")
+            }
+        }
+        "delegate_task" => Some("code_work"),
+        // Search operations -> searching
+        "web_search" | "read_file" | "read" | "search_files" => Some("searching"),
+        // Creative operations -> excited
+        "image" | "video" | "audio" | "text_to_speech" | "vision_analyze" | "vision" => Some("excited"),
+        // Browser operations -> curious (investigating web content)
+        "browser_navigate" | "browser_click" | "browser_type" | "browser_snapshot" | 
+        "browser_vision" | "browser_scroll" | "browser_press" | "browser_console" |
+        "browser_get_images" => Some("curious"),
+        // User interaction -> surprised
+        "clarify" => Some("surprised"),
+        // File operations -> terminal_work (file system changes)
+        "write_file" | "patch" => Some("terminal_work"),
+        // Default: no sub-state
+        _ => None,
+    }
+}
+
 fn map_event_to_pet_state(event_type: &str) -> &str {
     match event_type {
         "agent_start" => "Idle",
@@ -42,7 +138,21 @@ fn map_event_to_pet_state(event_type: &str) -> &str {
         "agent_error" => "Error",
         "agent_notification" => "Notification",
         "agent_sleep" => "Sleeping",
+        // Session lifecycle events
+        "session_start" => "Idle",
+        "session_end" => "Idle",
+        "session_update" => "Idle",
         _ => "Idle",
+    }
+}
+
+/// Extracts tool name from metadata and returns appropriate sub-state
+/// parent_state is used to disambiguate tools like execute_code
+fn extract_substate_from_metadata(metadata: &serde_json::Value, parent_state: &str) -> Option<String> {
+    if let Some(tool) = metadata.get("tool").and_then(|t| t.as_str()) {
+        map_tool_to_substate(tool, parent_state).map(|s| s.to_string())
+    } else {
+        None
     }
 }
 
@@ -53,16 +163,47 @@ async fn handle_webhook(
     eprintln!("[webhook] Received event: {} for profile: {}", payload.event_type, payload.profile_name);
     let app = app.lock().await;
     let pet_state = map_event_to_pet_state(&payload.event_type);
-    if let Err(e) = app.emit("pet_state_event", pet_state) {
+    
+    // Extract sub-state from metadata if available
+    // Pass the parent state to disambiguate tools like execute_code
+    let sub_state = extract_substate_from_metadata(&payload.metadata, pet_state);
+    
+    // Emit the pet state event with optional sub-state
+    let state_event = serde_json::json!({
+        "state": pet_state,
+        "sub_state": sub_state,
+    });
+    
+    if let Err(e) = app.emit("pet_state_event", state_event) {
         eprintln!("[webhook] Failed to emit pet_state_event: {}", e);
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
     if let Err(e) = app.emit("hermes_event", &payload) {
         eprintln!("[webhook] Failed to emit hermes_event: {}", e);
     }
+    
+    // Emit session lifecycle events for session_* event types
+    if payload.event_type.starts_with("session_") {
+        let session_event = serde_json::json!({
+            "event_type": payload.event_type,
+            "session_id": payload.session_id,
+            "profile_name": payload.profile_name,
+            "session_name": payload.metadata.get("session_name").and_then(|v| v.as_str()),
+            "character": payload.metadata.get("character").and_then(|v| v.as_str()),
+            "status": payload.metadata.get("status").and_then(|v| v.as_str()),
+            "timestamp": std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis() as i64)
+                .ok(),
+        });
+        if let Err(e) = app.emit("session_event", session_event) {
+            eprintln!("[webhook] Failed to emit session_event: {}", e);
+        }
+    }
+    
     Ok(Json(WebhookResponse {
         status: "ok".to_string(),
-        message: format!("Event {} mapped to pet state: {}", payload.event_type, pet_state),
+        message: format!("Event {} mapped to pet state: {} (sub_state: {:?})", payload.event_type, pet_state, sub_state),
     }))
 }
 

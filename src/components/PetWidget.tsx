@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { usePetMovement } from "../hooks/usePetMovement";
 import { usePetSystemStore } from "../store/petSystem";
 import { CharacterRenderer } from "./characters/CharacterRenderer";
-import type { PetName, PetState } from "../types/pet";
+import { useSoundManager } from "../hooks/useSoundManager";
+import type { PetName, PetState, PetSubState } from "../types/pet";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -10,7 +11,6 @@ interface PetWidgetProps {
   petName: PetName;
   profileName: string;
   initialX: number;
-  isSoundsEnabled: boolean;
 }
 
 // ─── Priority State Machine ───────────────────────────────────
@@ -37,12 +37,14 @@ function resolveState(current: PetState, incoming: PetState): PetState {
 function PetCharacter({
   characterId,
   state,
+  subState,
   direction,
   eyeX,
   eyeY,
 }: {
   characterId: PetName;
   state: PetState;
+  subState?: PetSubState;
   direction: number;
   eyeX: number;
   eyeY: number;
@@ -77,6 +79,7 @@ function PetCharacter({
       <CharacterRenderer
         characterId={characterId}
         state={displayState}
+        subState={subState}
         eyeX={eyeX}
         eyeY={eyeY}
       />
@@ -85,8 +88,11 @@ function PetCharacter({
 }
 
 // ─── Main Pet Widget ─────────────────────────────────────────
-export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _isSoundsEnabled }: PetWidgetProps) {
+export function PetWidget({ petName, profileName, initialX }: PetWidgetProps) {
   const [followTarget, setFollowTarget] = useState<{ x: number; y: number } | null>(null);
+
+  // Initialize sound manager
+  const { playStateSound } = useSoundManager();
 
   const characterId = usePetSystemStore((s) => s.getCharacterForProfile(profileName));
   const setPetState = usePetSystemStore((s) => s.setPetState);
@@ -123,16 +129,29 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
   }, [position.x, position.y, profileName, setPetPosition, getSizeScale]);
 
   const [currentState, setCurrentState] = useState<PetState>("idle");
+  const [currentSubState, setCurrentSubState] = useState<PetSubState | undefined>(undefined);
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const applyState = useCallback((newState: PetState) => {
+  const prevStateRef = useRef<PetState>("idle");
+  
+  const applyState = useCallback((newState: PetState, newSubState?: PetSubState) => {
     setCurrentState((prev) => {
       const resolved = resolveState(prev, newState);
-      setPetState(profileName, resolved);
+      setPetState(profileName, resolved, newSubState);
+      
+      // Play sound on state change (respects isSoundsEnabled internally)
+      if (prevStateRef.current !== resolved) {
+        playStateSound(resolved);
+        prevStateRef.current = resolved;
+      }
+      
       return resolved;
     });
-  }, [profileName, setPetState]);
+    if (newSubState !== undefined) {
+      setCurrentSubState(newSubState);
+    }
+  }, [profileName, setPetState, playStateSound]);
 
   // Show bubble helper
   const showBubble = useCallback((text: string, duration = 3000) => {
@@ -226,6 +245,25 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
     }
   }, [isDragging, currentState, applyState]);
 
+  // Listen for pet state events from the Rust backend
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    const setupListener = async () => {
+      unlisten = await listen<{ state: string; sub_state?: string }>("pet_state_event", (event) => {
+        const state = event.payload.state.toLowerCase() as PetState;
+        const subState = event.payload.sub_state as PetSubState | undefined;
+        applyState(state, subState);
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [applyState]);
+
   const scale = getSizeScale();
   const animationClass = currentState === "idle" ? "idle-animation" : "";
 
@@ -253,6 +291,7 @@ export function PetWidget({ petName, profileName, initialX, isSoundsEnabled: _is
         <PetCharacter
           characterId={characterId}
           state={currentState}
+          subState={currentSubState}
           direction={directionRef.current}
           eyeX={eyeOffset.x}
           eyeY={eyeOffset.y}

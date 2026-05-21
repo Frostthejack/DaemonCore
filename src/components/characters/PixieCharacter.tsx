@@ -2,7 +2,9 @@
  * Pixie character — abstract fairy dust / glowing sparkle cloud
  * Ethereal, magical, abstract. A cloud of light and sparkles.
  */
-export function PixieSVG({ state }: { state: string }) {
+import type { PetSubState } from "../../types/pet";
+
+export function PixieSVG({ state, subState: _subState }: { state: string; subState?: PetSubState }) {
   const baseHue = state === "working" ? 120 : state === "error" ? 0 : state === "notification" ? 320 : state === "sleeping" ? 260 : 45;
   const glowColor = `hsl(${baseHue}, 100%, 70%)`;
   const coreColor = `hsl(${baseHue}, 100%, 85%)`;

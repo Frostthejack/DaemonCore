@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePetSystemStore } from "../store/petSystem";
 import { CHARACTER_REGISTRY } from "../types/pet";
-import type { PetName, PetState, ProfileName } from "../types/pet";
+import type { PetName, PetState, ProfileName, Session } from "../types/pet";
 
 // ── State display config ───────────────────────────────────────────────
 
@@ -153,7 +153,7 @@ function CharacterDropdown({
 // ── Session Card ────────────────────────────────────────────────────────
 
 function SessionCard({
-  profile,
+  session,
   characterId,
   state,
   x,
@@ -162,7 +162,7 @@ function SessionCard({
   onCharacterChange,
   onRemove,
 }: {
-  profile: ProfileName;
+  session: Session;
   characterId: PetName;
   state: PetState;
   x: number;
@@ -173,6 +173,12 @@ function SessionCard({
 }) {
   const status = getStatus(state);
   const statusColor = getStatusColor(status);
+
+  // Format session duration
+  const duration = Math.floor((Date.now() - session.startTime) / 1000);
+  const durationStr = duration < 60
+    ? `${duration}s`
+    : `${Math.floor(duration / 60)}m ${duration % 60}s`;
 
   return (
     <div
@@ -194,7 +200,7 @@ function SessionCard({
               display: "inline-block",
             }}
           />
-          <span className="session-card-title-text">{profile}</span>
+          <span className="session-card-title-text">{session.name}</span>
           <span
             style={{
               fontSize: 10,
@@ -209,7 +215,7 @@ function SessionCard({
         </div>
         <button
           className="pet-remove"
-          onClick={() => onRemove(profile)}
+          onClick={() => onRemove(session.profileName)}
           title="Remove session"
         >
           ✕
@@ -219,9 +225,19 @@ function SessionCard({
       {/* Card Body */}
       <div className="session-card-body">
         <div className="session-card-row">
+          <span className="session-card-label">Profile</span>
+          <span className="session-card-value">{session.profileName}</span>
+        </div>
+
+        <div className="session-card-row">
+          <span className="session-card-label">Duration</span>
+          <span className="session-card-value">{durationStr}</span>
+        </div>
+
+        <div className="session-card-row">
           <span className="session-card-label">State</span>
           <StateDropdown
-            profile={profile}
+            profile={session.profileName}
             currentState={state}
             onStateChange={onStateChange}
           />
@@ -230,7 +246,7 @@ function SessionCard({
         <div className="session-card-row">
           <span className="session-card-label">Character</span>
           <CharacterDropdown
-            profile={profile}
+            profile={session.profileName}
             currentCharacter={characterId}
             onCharacterChange={onCharacterChange}
           />
@@ -255,6 +271,7 @@ interface SessionPanelProps {
 }
 
 export function SessionPanel({ isOpen, onClose }: SessionPanelProps) {
+  const sessions = usePetSystemStore((s) => s.sessions);
   const pets = usePetSystemStore((s) => s.pets);
   const spawnPet = usePetSystemStore((s) => s.spawnPet);
   const removePet = usePetSystemStore((s) => s.removePet);
@@ -262,6 +279,15 @@ export function SessionPanel({ isOpen, onClose }: SessionPanelProps) {
   const setCharacterForProfile = usePetSystemStore((s) => s.setCharacterForProfile);
 
   const [newProfile, setNewProfile] = useState("");
+
+  // Listen for session events from Tauri backend
+  useEffect(() => {
+    const unsubscribe = usePetSystemStore.subscribe((_state, _prevState) => {
+      // Handle session events from the backend
+      // This would be connected via Tauri event listeners in a real implementation
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleStateChange = (profile: ProfileName, state: PetState) => {
     setPetState(profile, state);
@@ -302,27 +328,31 @@ export function SessionPanel({ isOpen, onClose }: SessionPanelProps) {
 
         {/* Session List */}
         <div className="session-panel-list">
-          {pets.length === 0 ? (
+          {sessions.length === 0 ? (
             <div className="session-panel-empty">
               <p className="session-panel-empty-text">No active sessions</p>
               <p className="session-panel-empty-hint">
-                Spawn a pet below to get started
+                Sessions will appear here when Hermes starts working
               </p>
             </div>
           ) : (
-            pets.map((pet) => (
-              <SessionCard
-                key={pet.profileName}
-                profile={pet.profileName}
-                characterId={pet.characterId}
-                state={pet.state}
-                x={pet.x}
-                y={pet.y}
-                onStateChange={handleStateChange}
-                onCharacterChange={handleCharacterChange}
-                onRemove={handleRemove}
-              />
-            ))
+            sessions.map((session) => {
+              // Find the corresponding pet for this session
+              const pet = pets.find((p) => p.profileName === session.profileName);
+              return (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  characterId={pet?.characterId || session.character}
+                  state={pet?.state || "idle"}
+                  x={pet?.x || 0}
+                  y={pet?.y || 0}
+                  onStateChange={handleStateChange}
+                  onCharacterChange={handleCharacterChange}
+                  onRemove={handleRemove}
+                />
+              );
+            })
           )}
         </div>
 
@@ -345,7 +375,7 @@ export function SessionPanel({ isOpen, onClose }: SessionPanelProps) {
         {/* Footer */}
         <div className="session-panel-footer">
           <span className="session-panel-footer-text">
-            {pets.length} active session{pets.length !== 1 ? "s" : ""}
+            {sessions.length} active session{sessions.length !== 1 ? "s" : ""}
           </span>
         </div>
       </div>

@@ -2,7 +2,9 @@
  * Terminal character — retro green-on-black terminal cursor
  * Blinking cursor with occasional command flashes
  */
-export function TerminalSVG({ state }: { state: string }) {
+import type { PetSubState } from "../../types/pet";
+
+export function TerminalSVG({ state, subState: _subState }: { state: string; subState?: PetSubState }) {
   const cursorColor = state === "working" ? "#00FF00" : state === "error" ? "#FF4444" : "#00FF41";
   const bgOpacity = state === "sleeping" ? "0.3" : "0.85";
 

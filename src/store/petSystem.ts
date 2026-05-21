@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { PetName, PetState, ProfileName, PetInstance } from "../types/pet";
+import type { PetName, PetState, PetSubState, ProfileName, PetInstance, Session, SessionEvent } from "../types/pet";
 
 // ─── Profile → Character mapping ─────────────────────────────
 // Persists which character each Hermes profile uses
@@ -23,8 +23,9 @@ interface PetSystemStore {
   removePet: (profile: ProfileName) => void;
 
   // State management (priority-aware)
-  setPetState: (profile: ProfileName, state: PetState) => void;
+  setPetState: (profile: ProfileName, state: PetState, subState?: PetSubState) => void;
   getPetState: (profile: ProfileName) => PetState;
+  getPetSubState: (profile: ProfileName) => PetSubState | undefined;
 
   // Position
   setPetPosition: (profile: ProfileName, x: number, y: number) => void;
@@ -34,6 +35,14 @@ interface PetSystemStore {
   followDistance: number;
   setFollowMouse: (enabled: boolean) => void;
   setFollowDistance: (distance: number) => void;
+
+  // Session tracking
+  sessions: Session[];
+  addSession: (session: Session) => void;
+  updateSession: (sessionId: string, updates: Partial<Omit<Session, 'id'>>) => void;
+  removeSession: (sessionId: string) => void;
+  handleSessionEvent: (event: SessionEvent) => void;
+  getSessionByProfile: (profile: ProfileName) => Session | undefined;
 }
 
 // Default character per profile (first spawn)
@@ -123,10 +132,10 @@ export const usePetSystemStore = create<PetSystemStore>((set, get) => ({
     set({ pets: get().pets.filter((p) => p.profileName !== profile) });
   },
 
-  setPetState: (profile, newState) => {
+  setPetState: (profile, newState, newSubState) => {
     const pets = get().pets.map((p) => {
       if (p.profileName !== profile) return p;
-      return { ...p, state: newState };
+      return { ...p, state: newState, subState: newSubState };
     });
     set({ pets });
   },
@@ -134,6 +143,11 @@ export const usePetSystemStore = create<PetSystemStore>((set, get) => ({
   getPetState: (profile) => {
     const pet = get().pets.find((p) => p.profileName === profile);
     return pet?.state || "idle";
+  },
+
+  getPetSubState: (profile) => {
+    const pet = get().pets.find((p) => p.profileName === profile);
+    return pet?.subState;
   },
 
   setPetPosition: (profile, x, y) => {
@@ -154,5 +168,65 @@ export const usePetSystemStore = create<PetSystemStore>((set, get) => ({
   setFollowDistance: (distance) => {
     set({ followDistance: distance });
     persistState(get().profileCharacters, get().followMouse, distance);
+  },
+
+  // Session tracking
+  sessions: [],
+
+  addSession: (session) => {
+    const existing = get().sessions.find((s) => s.id === session.id);
+    if (existing) return;
+    set({ sessions: [...get().sessions, session] });
+  },
+
+  updateSession: (sessionId, updates) => {
+    const sessions = get().sessions.map((s) =>
+      s.id === sessionId ? { ...s, ...updates, lastUpdate: Date.now() } : s
+    );
+    set({ sessions });
+  },
+
+  removeSession: (sessionId) => {
+    set({ sessions: get().sessions.filter((s) => s.id !== sessionId) });
+  },
+
+  handleSessionEvent: (event) => {
+    const state = get();
+    switch (event.event_type) {
+      case "session_start": {
+        const character = event.character || state.getCharacterForProfile(event.profile_name);
+        const newSession: Session = {
+          id: event.session_id,
+          profileName: event.profile_name,
+          name: event.session_name || `Session ${event.session_id.slice(0, 8)}`,
+          status: "active",
+          character,
+          startTime: event.timestamp || Date.now(),
+        };
+        state.addSession(newSession);
+        // Also spawn a pet for this session
+        state.spawnPet(event.profile_name, character);
+        break;
+      }
+      case "session_update": {
+        state.updateSession(event.session_id, {
+          status: event.status || "active",
+          character: event.character,
+        });
+        break;
+      }
+      case "session_end": {
+        state.updateSession(event.session_id, { status: "ended" });
+        // Remove pet when session ends
+        state.removePet(event.profile_name);
+        // Keep session in list for history, or remove after delay
+        setTimeout(() => state.removeSession(event.session_id), 5000);
+        break;
+      }
+    }
+  },
+
+  getSessionByProfile: (profile) => {
+    return get().sessions.find((s) => s.profileName === profile && s.status === "active");
   },
 }));

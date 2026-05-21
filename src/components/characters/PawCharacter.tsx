@@ -2,7 +2,9 @@
  * Paw character — cartoon style
  * Soft round paw pad that stretches and boops. Loyal and playful.
  */
-export function PawSVG({ state }: { state: string }) {
+import type { PetSubState } from "../../types/pet";
+
+export function PawSVG({ state, subState: _subState }: { state: string; subState?: PetSubState }) {
   const pawColor = state === "error" ? "#CC6666" : state === "working" ? "#88CC88" : "#FFB6C1";
   const padColor = state === "error" ? "#AA5555" : state === "working" ? "#66AA66" : "#FF91A4";
 

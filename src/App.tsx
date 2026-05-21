@@ -3,7 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { PetWidget } from "./components/PetWidget";
 import { useAppConfig } from "./hooks/useAppConfig";
 import { usePetSystemStore } from "./store/petSystem";
-import type { PetState } from "./types/pet";
+import type { PetState, SessionEvent } from "./types/pet";
 import "./App.css";
 
 // ─── Hermes event → PetState mapping ──────────────────────────
@@ -27,9 +27,21 @@ function isValidWebhookPayload(payload: unknown): payload is {
   return typeof p.event_type === "string" && typeof p.profile_name === "string";
 }
 
+// Validate session event payload
+function isValidSessionEvent(payload: unknown): payload is SessionEvent {
+  if (typeof payload !== "object" || payload === null) return false;
+  const p = payload as Record<string, unknown>;
+  return (
+    typeof p.event_type === "string" &&
+    ["session_start", "session_end", "session_update"].includes(p.event_type) &&
+    typeof p.session_id === "string" &&
+    typeof p.profile_name === "string"
+  );
+}
+
 // ─── Main App ────────────────────────────────────────────────
 function App() {
-  const { showPet, theme, isSoundsEnabled } = useAppConfig();
+  const { showPet, theme } = useAppConfig();
   const pets = usePetSystemStore((s) => s.pets);
 
   // Spawn default pet on mount
@@ -74,6 +86,29 @@ function App() {
     };
   }, []);
 
+  // Listen for session lifecycle events
+  useEffect(() => {
+    const unlisten = listen<unknown>("session_event", (event) => {
+      try {
+        const payload = event.payload;
+        if (!isValidSessionEvent(payload)) {
+          console.warn("[session] Malformed session event received, ignoring:", payload);
+          return;
+        }
+
+        const store = usePetSystemStore.getState();
+        store.handleSessionEvent(payload);
+        console.debug(`[session] ${payload.event_type} for ${payload.session_id}`);
+      } catch (err) {
+        console.error("[session] Error processing session event:", err);
+      }
+    });
+
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
+
   return (
     <main className={`container theme-${theme}`}>
       {showPet && pets.map((pet, i) => (
@@ -82,7 +117,6 @@ function App() {
           petName={pet.characterId}
           profileName={pet.profileName}
           initialX={window.innerWidth / 2 - 75 + (i * 160)}
-          isSoundsEnabled={isSoundsEnabled}
         />
       ))}
     </main>

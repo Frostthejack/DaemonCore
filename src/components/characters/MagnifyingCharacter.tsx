@@ -2,7 +2,9 @@
  * Magnifying Glass character — cartoon style
  * Friendly magnifier with a curious expression
  */
-export function MagnifyingSVG({ state }: { state: string }) {
+import type { PetSubState } from "../../types/pet";
+
+export function MagnifyingSVG({ state }: { state: string; subState?: PetSubState }) {
   const glassColor = state === "working" ? "#4CAF50" : state === "thinking" ? "#2196F3" : "#FFD700";
   const handleColor = "#8B4513";
 

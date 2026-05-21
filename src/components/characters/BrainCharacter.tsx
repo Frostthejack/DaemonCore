@@ -2,7 +2,9 @@
  * Brain character — abstract glowing neural network
  * Pulsing pink brain with connecting neural lines
  */
-export function BrainSVG({ state }: { state: string }) {
+import type { PetSubState } from "../../types/pet";
+
+export function BrainSVG({ state, subState: _subState }: { state: string; subState?: PetSubState }) {
   const pulseColor = state === "thinking" ? "#FF69B4" : state === "working" ? "#00FF88" : "#FF69B4";
   const glowIntensity = state === "thinking" ? "0.9" : state === "working" ? "0.8" : "0.5";
 
