@@ -7,7 +7,10 @@ use axum::{
     Json, Router,
     extract::State,
     http::StatusCode,
-    http::header::AUTHORIZATION,
+};
+use axum_extra::{
+    extract::TypedHeader,
+    headers::{authorization::Bearer, Authorization},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -97,34 +100,22 @@ fn load_or_generate_token(app: &AppHandle) -> String {
 
 /// Maps tool names to granular sub-states for pet reactions
 /// Inspired by hermes-visualizer-plugin's mood detection approach
-/// parent_state is used to disambiguate tools like execute_code that have different
-/// meanings depending on context (working vs thinking)
-fn map_tool_to_substate(tool_name: &str, parent_state: &str) -> Option<&'static str> {
+fn map_tool_to_substate(tool_name: &str) -> Option<&'static str> {
     match tool_name {
-        // Terminal operations -> terminal_work
-        "terminal" | "patch" | "git" => Some("terminal_work"),
-        // Code operations - depends on parent state
-        "execute_code" => {
-            // When parent is "thinking", use analyzing; otherwise code_work
-            if parent_state == "thinking" {
-                Some("analyzing")
-            } else {
-                Some("code_work")
-            }
-        }
-        "delegate_task" => Some("code_work"),
-        // Search operations -> searching
-        "web_search" | "read_file" | "read" | "search_files" => Some("searching"),
+        // Investigation -> curious
+        "web_search" | "read_file" | "browser_navigate" => Some("curious"),
+        // Terminal/work operations -> terminal_work
+        "terminal" | "patch" | "browser_click" | "todo" => Some("terminal_work"),
+        // Code operations -> code_work
+        "execute_code" | "delegate_task" => Some("code_work"),
         // Creative operations -> excited
-        "image" | "video" | "audio" | "text_to_speech" | "vision_analyze" | "vision" => Some("excited"),
-        // Browser operations -> curious (investigating web content)
-        "browser_navigate" | "browser_click" | "browser_type" | "browser_snapshot" | 
-        "browser_vision" | "browser_scroll" | "browser_press" | "browser_console" |
-        "browser_get_images" => Some("curious"),
+        "image_generate" | "text_to_speech" => Some("excited"),
         // User interaction -> surprised
         "clarify" => Some("surprised"),
-        // File operations -> terminal_work (file system changes)
-        "write_file" | "patch" => Some("terminal_work"),
+        // Analysis operations -> analyzing (within thinking)
+        "memory" | "session_search" | "vision_analyze" => Some("analyzing"),
+        // Completion operations -> done (happy completion)
+        "write_file" | "send_message" => Some("done"),
         // Default: no sub-state
         _ => None,
     }
@@ -148,10 +139,9 @@ fn map_event_to_pet_state(event_type: &str) -> &str {
 }
 
 /// Extracts tool name from metadata and returns appropriate sub-state
-/// parent_state is used to disambiguate tools like execute_code
-fn extract_substate_from_metadata(metadata: &serde_json::Value, parent_state: &str) -> Option<String> {
+fn extract_substate_from_metadata(metadata: &serde_json::Value) -> Option<String> {
     if let Some(tool) = metadata.get("tool").and_then(|t| t.as_str()) {
-        map_tool_to_substate(tool, parent_state).map(|s| s.to_string())
+        map_tool_to_substate(tool).map(|s| s.to_string())
     } else {
         None
     }
@@ -178,8 +168,7 @@ async fn handle_webhook(
     let tool_name = payload.metadata.get("tool").and_then(|t| t.as_str());
     
     // Extract sub-state from metadata if available
-    // Pass the parent state to disambiguate tools like execute_code
-    let sub_state = extract_substate_from_metadata(&payload.metadata, pet_state);
+    let sub_state = extract_substate_from_metadata(&payload.metadata);
     
     // Emit the pet state event with optional sub-state
     let state_event = serde_json::json!({
