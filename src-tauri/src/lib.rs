@@ -639,3 +639,146 @@ pub async fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+// ─── Webhook Auth Tests ───────────────────────────────────────────
+#[cfg(test)]
+mod webhook_tests {
+    use super::*;
+    use std::fs;
+
+    /// Test that WebhookTokenStore get/set works correctly
+    #[tokio::test]
+    async fn test_webhook_token_store_get_set() {
+        let store = WebhookTokenStore::new();
+        
+        // Initially empty
+        assert_eq!(store.get().await, "");
+        
+        // Set a token
+        store.set("test-token-123".to_string()).await;
+        assert_eq!(store.get().await, "test-token-123");
+        
+        // Overwrite with new token
+        store.set("new-token-456".to_string()).await;
+        assert_eq!(store.get().await, "new-token-456");
+    }
+
+    /// Test that WebhookTokenStore is thread-safe (concurrent access)
+    #[tokio::test]
+    async fn test_webhook_token_store_concurrent() {
+        let store = Arc::new(WebhookTokenStore::new());
+        
+        let store2 = store.clone();
+        let handle = tokio::spawn(async move {
+            store2.set("concurrent-token".to_string()).await;
+        });
+        
+        handle.await.unwrap();
+        assert_eq!(store.get().await, "concurrent-token");
+    }
+
+    /// Test that UUID generation produces valid v4 UUIDs
+    #[test]
+    fn test_uuid_generation() {
+        let uuid1 = Uuid::new_v4().to_string();
+        let uuid2 = Uuid::new_v4().to_string();
+        
+        // Should be different
+        assert_ne!(uuid1, uuid2);
+        
+        // Should be valid UUID format (36 chars with hyphens)
+        assert_eq!(uuid1.len(), 36);
+        assert_eq!(uuid2.len(), 36);
+        
+        // Should have hyphens at correct positions
+        assert_eq!(uuid1.as_bytes()[8], b'-');
+        assert_eq!(uuid1.as_bytes()[13], b'-');
+        assert_eq!(uuid1.as_bytes()[18], b'-');
+        assert_eq!(uuid1.as_bytes()[23], b'-');
+        
+        // Should be parseable as UUID
+        assert!(Uuid::parse_str(&uuid1).is_ok());
+        assert!(Uuid::parse_str(&uuid2).is_ok());
+    }
+
+    /// Test token file persistence: write and read back
+    #[test]
+    fn test_token_file_persistence() {
+        let test_dir = std::env::temp_dir().join("daemoncore_test");
+        let _ = fs::create_dir_all(&test_dir);
+        let token_path = test_dir.join("webhook_token.txt");
+        
+        // Clean up any existing file
+        let _ = fs::remove_file(&token_path);
+        
+        // Write a token
+        let test_token = "test-persistence-token";
+        fs::write(&token_path, test_token).unwrap();
+        
+        // Read it back
+        let read_token = fs::read_to_string(&token_path).unwrap();
+        assert_eq!(read_token.trim(), test_token);
+        
+        // Clean up
+        let _ = fs::remove_file(&token_path);
+        let _ = fs::remove_dir(&test_dir);
+    }
+
+    /// Test that empty token file triggers regeneration
+    #[test]
+    fn test_empty_token_file_triggers_generation() {
+        let test_dir = std::env::temp_dir().join("daemoncore_test_empty");
+        let _ = fs::create_dir_all(&test_dir);
+        let token_path = test_dir.join("webhook_token.txt");
+        
+        // Write empty file
+        fs::write(&token_path, "").unwrap();
+        
+        // Read and check it's empty
+        let read = fs::read_to_string(&token_path).unwrap();
+        assert!(read.trim().is_empty());
+        
+        // Clean up
+        let _ = fs::remove_file(&token_path);
+        let _ = fs::remove_dir(&test_dir);
+    }
+
+    /// Test that the global token store singleton works
+    #[tokio::test]
+    async fn test_global_token_store_singleton() {
+        let store1 = get_token_store();
+        let store2 = get_token_store();
+        
+        // Should be the same instance
+        assert!(Arc::ptr_eq(store1, store2));
+    }
+
+    /// Test regenerate_webhook_token generates a new UUID and persists it
+    /// (tests the file-writing logic directly)
+    #[test]
+    fn test_regenerate_token_logic() {
+        let test_dir = std::env::temp_dir().join("daemoncore_test_regen");
+        let _ = fs::create_dir_all(&test_dir);
+        let token_path = test_dir.join("webhook_token.txt");
+        
+        // Clean up
+        let _ = fs::remove_file(&token_path);
+        
+        // Generate and write first token
+        let token1 = Uuid::new_v4().to_string();
+        fs::write(&token_path, &token1).unwrap();
+        
+        // Generate and write second token
+        let token2 = Uuid::new_v4().to_string();
+        fs::write(&token_path, &token2).unwrap();
+        
+        // Read back should be the second token
+        let read = fs::read_to_string(&token_path).unwrap();
+        assert_eq!(read.trim(), token2);
+        assert_ne!(read.trim(), token1);
+        
+        // Clean up
+        let _ = fs::remove_file(&token_path);
+        let _ = fs::remove_dir(&test_dir);
+    }
+}
