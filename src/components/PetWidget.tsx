@@ -4,7 +4,6 @@ import { usePetSystemStore } from "../store/petSystem";
 import { CharacterRenderer } from "./characters/CharacterRenderer";
 import { useSoundManager } from "../hooks/useSoundManager";
 import type { PetName, PetState, PetSubState } from "../types/pet";
-import { CHARACTER_REGISTRY } from "../types/pet";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -12,25 +11,6 @@ interface PetWidgetProps {
   petName: PetName;
   profileName: string;
   initialX: number;
-}
-
-// ─── Animation Selection Logic ───────────────────────────────────
-// Selects animation based on sub-state with fallback to parent state
-function getAnimationForSubState(
-  characterId: PetName,
-  subState?: PetSubState
-): string | undefined {
-  if (!subState) return undefined;
-  
-  const character = CHARACTER_REGISTRY[characterId];
-  if (!character?.animations) return undefined;
-  
-  // Try to get specific animation for sub-state
-  const animation = character.animations[subState];
-  if (animation) return animation;
-  
-  // Fallback to parent state animation (handled by character component)
-  return undefined;
 }
 
 // ─── Priority State Machine ───────────────────────────────────
@@ -88,22 +68,15 @@ function PetCharacter({
   const flip = direction < 0 ? "scale(-1, 1)" : "";
 
   return (
-    <div
-      className="pet-character-svg-wrapper"
-      style={{
-        opacity: fading ? 0.5 : 1,
-        transition: "opacity 150ms ease-in-out",
-        transform: flip,
-      }}
-    >
-      <CharacterRenderer
-        characterId={characterId}
-        state={displayState}
-        subState={subState}
-        eyeX={eyeX}
-        eyeY={eyeY}
-      />
-    </div>
+    <CharacterRenderer
+      characterId={characterId}
+      state={displayState}
+      subState={subState}
+      eyeX={eyeX}
+      eyeY={eyeY}
+      crossFadeOpacity={fading ? 0.5 : 1}
+      crossFadeTransform={flip}
+    />
   );
 }
 
@@ -285,17 +258,11 @@ export function PetWidget({ petName, profileName, initialX }: PetWidgetProps) {
   }, [applyState]);
 
   const scale = getSizeScale();
-  
-  // Get animation class based on sub-state with fallback to parent state
-  const subStateAnimation = getAnimationForSubState(characterId, currentSubState);
-  const animationClass = subStateAnimation 
-    ? `${subStateAnimation}-animation` 
-    : currentState === "idle" ? "idle-animation" : "";
 
   return (
     <div
       ref={widgetRef}
-      className={`floating-widget ${animationClass}`}
+      className="floating-widget"
       style={{
         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
         zIndex: 1000,

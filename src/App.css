@@ -148,6 +148,294 @@ body {
   animation: idle-breathe 3s infinite ease-in-out;
 }
 
+/* ─── Character Animation Variants ─────────────────────────── */
+/* Subtle, looping animations applied to pet-character-svg-wrapper
+   via CHARACTER_ANIMATIONS[characterId][subState] lookup. */
+
+/* ── Owl ── */
+@keyframes anim-terminal-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 255, 65, 0.3)); }
+  50% { filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.6)); }
+}
+.anim-terminal-glow { animation: anim-terminal-glow 2s infinite ease-in-out; }
+
+@keyframes anim-code-typing {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  75% { transform: translateX(-1px); }
+}
+.anim-code-typing { animation: anim-code-typing 0.3s infinite steps(2); }
+
+@keyframes anim-head-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-3deg); }
+  70% { transform: rotate(3deg); }
+}
+.anim-head-tilt { animation: anim-head-tilt 2.5s infinite ease-in-out; }
+
+@keyframes anim-eye-focus {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+.anim-eye-focus { animation: anim-eye-focus 1.8s infinite ease-in-out; }
+
+@keyframes anim-peering {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.01); }
+}
+.anim-peering { animation: anim-peering 2s infinite ease-in-out; }
+
+@keyframes anim-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.anim-bounce { animation: anim-bounce 0.6s infinite ease-in-out; }
+
+@keyframes anim-startled {
+  0% { transform: scale(1) rotate(0deg); }
+  15% { transform: scale(1.08) rotate(-2deg); }
+  30% { transform: scale(0.95) rotate(2deg); }
+  45% { transform: scale(1.03) rotate(-1deg); }
+  60% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+.anim-startled { animation: anim-startled 1.5s infinite ease-in-out; }
+
+/* ── Brain ── */
+@keyframes anim-neural-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 105, 180, 0.4)); }
+  50% { filter: drop-shadow(0 0 10px rgba(255, 105, 180, 0.7)); }
+}
+.anim-neural-pulse { animation: anim-neural-pulse 1.5s infinite ease-in-out; }
+
+@keyframes anim-synapse-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; filter: brightness(1.2); }
+}
+.anim-synapse-flash { animation: anim-synapse-flash 0.4s infinite steps(2); }
+
+@keyframes anim-wave-scan {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(1.03); }
+  100% { transform: scaleX(1); }
+}
+.anim-wave-scan { animation: anim-wave-scan 2s infinite ease-in-out; }
+
+@keyframes anim-deep-focus {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(99, 179, 237, 0.3)); }
+  50% { filter: drop-shadow(0 0 6px rgba(99, 179, 237, 0.5)); }
+}
+.anim-deep-focus { animation: anim-deep-focus 2.5s infinite ease-in-out; }
+
+@keyframes anim-pulse-inquiry {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.9; }
+}
+.anim-pulse-inquiry { animation: anim-pulse-inquiry 1.8s infinite ease-in-out; }
+
+@keyframes anim-spark-burst {
+  0% { filter: drop-shadow(0 0 2px rgba(241, 196, 15, 0.3)); }
+  50% { filter: drop-shadow(0 0 12px rgba(241, 196, 15, 0.7)); }
+  100% { filter: drop-shadow(0 0 2px rgba(241, 196, 15, 0.3)); }
+}
+.anim-spark-burst { animation: anim-spark-burst 0.8s infinite ease-in-out; }
+
+@keyframes anim-jolt {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, -1px); }
+  40% { transform: translate(2px, 1px); }
+  60% { transform: translate(-1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+.anim-jolt { animation: anim-jolt 0.5s infinite ease-in-out; }
+
+/* ── Terminal ── */
+@keyframes anim-cursor-blink-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.anim-cursor-blink-fast { animation: anim-cursor-blink-fast 0.5s infinite steps(1); }
+
+@keyframes anim-keystroke {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(1px); }
+}
+.anim-keystroke { animation: anim-keystroke 0.15s infinite steps(2); }
+
+@keyframes anim-scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+.anim-scan-line { animation: anim-scan-line 2s infinite linear; }
+
+@keyframes anim-process-bar {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+.anim-process-bar { animation: anim-process-bar 1s infinite ease-in-out; }
+
+@keyframes anim-prompt-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.anim-prompt-blink { animation: anim-prompt-blink 1.2s infinite steps(1); }
+
+@keyframes anim-glitch {
+  0%, 100% { transform: translate(0, 0); filter: none; }
+  20% { transform: translate(-1px, 0); filter: hue-rotate(90deg); }
+  40% { transform: translate(1px, 0); filter: hue-rotate(0deg); }
+  60% { transform: translate(0, -1px); filter: hue-rotate(180deg); }
+  80% { transform: translate(0, 1px); filter: none; }
+}
+.anim-glitch { animation: anim-glitch 0.3s infinite steps(2); }
+
+@keyframes anim-error-flash {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 6px rgba(255, 68, 68, 0.8)); }
+}
+.anim-error-flash { animation: anim-error-flash 0.5s infinite ease-in-out; }
+
+/* ── Magnifying Glass ── */
+@keyframes anim-glass-glide {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(3px) rotate(1deg); }
+  75% { transform: translateX(-3px) rotate(-1deg); }
+}
+.anim-glass-glide { animation: anim-glass-glide 3s infinite ease-in-out; }
+
+@keyframes anim-inspect {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.anim-inspect { animation: anim-inspect 1.5s infinite ease-in-out; }
+
+@keyframes anim-sweep {
+  0% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  100% { transform: translateX(-5px); }
+}
+.anim-sweep { animation: anim-sweep 2.5s infinite ease-in-out; }
+
+@keyframes anim-zoom {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.anim-zoom { animation: anim-zoom 2s infinite ease-in-out; }
+
+@keyframes anim-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-5deg); }
+  70% { transform: rotate(5deg); }
+}
+.anim-tilt { animation: anim-tilt 2s infinite ease-in-out; }
+
+@keyframes anim-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-spin { animation: anim-spin 3s infinite linear; }
+
+@keyframes anim-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.anim-shake { animation: anim-shake 0.3s infinite ease-in-out; }
+
+/* ── Paw ── */
+@keyframes anim-tap {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(2px) scaleY(0.97); }
+}
+.anim-tap { animation: anim-tap 0.4s infinite ease-in-out; }
+
+@keyframes anim-stretch {
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  50% { transform: scaleX(1.05) scaleY(0.95); }
+}
+.anim-stretch { animation: anim-stretch 2s infinite ease-in-out; }
+
+@keyframes anim-lift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.anim-lift { animation: anim-lift 1s infinite ease-in-out; }
+
+@keyframes anim-nudge {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(2px); }
+  70% { transform: translateX(-2px); }
+}
+.anim-nudge { animation: anim-nudge 0.8s infinite ease-in-out; }
+
+@keyframes anim-boing {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  30% { transform: translateY(-6px) scaleY(1.05); }
+  50% { transform: translateY(0) scaleY(0.92); }
+  70% { transform: translateY(-2px) scaleY(1.02); }
+}
+.anim-boing { animation: anim-boing 0.8s infinite ease-in-out; }
+
+@keyframes anim-jump {
+  0%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-8px); }
+  40% { transform: translateY(0); }
+  60% { transform: translateY(-4px); }
+  80% { transform: translateY(0); }
+}
+.anim-jump { animation: anim-jump 1s infinite ease-in-out; }
+
+/* ── Pixie ── */
+@keyframes anim-spark-trail {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.4)); }
+  50% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7)); }
+}
+.anim-spark-trail { animation: anim-spark-trail 1.2s infinite ease-in-out; }
+
+@keyframes anim-dust-swirl {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.03); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.anim-dust-swirl { animation: anim-dust-swirl 4s infinite linear; }
+
+@keyframes anim-glow-pulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 3px rgba(147, 112, 219, 0.3)); }
+  50% { filter: brightness(1.15) drop-shadow(0 0 8px rgba(147, 112, 219, 0.5)); }
+}
+.anim-glow-pulse { animation: anim-glow-pulse 2s infinite ease-in-out; }
+
+@keyframes anim-orbital {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-orbital { animation: anim-orbital 6s infinite linear; }
+
+@keyframes anim-flicker {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.85; }
+  50% { opacity: 1; }
+  75% { opacity: 0.9; }
+}
+.anim-flicker { animation: anim-flicker 0.8s infinite steps(4); }
+
+@keyframes anim-explosion {
+  0% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 165, 0, 0.3)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 12px rgba(255, 165, 0, 0.6)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 165, 0, 0.3)); }
+}
+.anim-explosion { animation: anim-explosion 1s infinite ease-in-out; }
+
+@keyframes anim-scatter {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.02); opacity: 0.95; }
+  50% { transform: scale(0.98); opacity: 1; }
+  75% { transform: scale(1.01); opacity: 0.97; }
+}
+.anim-scatter { animation: anim-scatter 0.6s infinite ease-in-out; }
+
 /* ─── Manager Toggle ───────────────────────────────────────── */
 .manager-toggle {
   position: fixed;
