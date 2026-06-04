@@ -218,6 +218,7 @@ export interface PetInstance {
   characterId: PetName;
   state: PetState;
   subState?: PetSubState;  // Optional granular state for tool-specific reactions
+  currentAnimation?: string;  // Resolved animation name from CHARACTER_ANIMATIONS
   x: number;
   y: number;
 }

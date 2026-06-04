@@ -1,5 +1,14 @@
 import { create } from "zustand";
-import type { PetName, PetState, PetSubState, ProfileName, PetInstance, Session, SessionEvent } from "../types/pet";
+import type {
+  PetName,
+  PetState,
+  PetSubState,
+  ProfileName,
+  PetInstance,
+  Session,
+  SessionEvent,
+} from "../types/pet";
+import { CHARACTER_ANIMATIONS, SUBSTATE_PARENT_STATE } from "../types/pet";
 
 // ─── Profile → Character mapping ─────────────────────────────
 // Persists which character each Hermes profile uses
@@ -26,6 +35,10 @@ interface PetSystemStore {
   setPetState: (profile: ProfileName, state: PetState, subState?: PetSubState) => void;
   getPetState: (profile: ProfileName) => PetState;
   getPetSubState: (profile: ProfileName) => PetSubState | undefined;
+
+  // Animation tracking
+  setPetAnimation: (profile: ProfileName, animation: string) => void;
+  getPetAnimation: (profile: ProfileName) => string | undefined;
 
   // Position
   setPetPosition: (profile: ProfileName, x: number, y: number) => void;
@@ -148,6 +161,27 @@ export const usePetSystemStore = create<PetSystemStore>((set, get) => ({
   getPetSubState: (profile) => {
     const pet = get().pets.find((p) => p.profileName === profile);
     return pet?.subState;
+  },
+
+  setPetAnimation: (profile, animation) => {
+    const pets = get().pets.map((p) =>
+      p.profileName === profile ? { ...p, currentAnimation: animation } : p
+    );
+    set({ pets });
+  },
+
+  getPetAnimation: (profile) => {
+    const pet = get().pets.find((p) => p.profileName === profile);
+    if (pet?.currentAnimation) return pet.currentAnimation;
+    // Derive from CHARACTER_ANIMATIONS[characterId][subState] with fallback to parent state
+    if (pet?.subState && pet?.characterId) {
+      const charAnims = CHARACTER_ANIMATIONS[pet.characterId];
+      if (charAnims?.[pet.subState]) return charAnims[pet.subState];
+      // Fallback: try parent state's default animation
+      const parentState = SUBSTATE_PARENT_STATE[pet.subState];
+      if (parentState && charAnims?.[parentState]) return charAnims[parentState];
+    }
+    return undefined;
   },
 
   setPetPosition: (profile, x, y) => {
