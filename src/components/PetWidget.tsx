@@ -4,7 +4,6 @@ import { usePetSystemStore } from "../store/petSystem";
 import { CharacterRenderer } from "./characters/CharacterRenderer";
 import { useSoundManager } from "../hooks/useSoundManager";
 import type { PetName, PetState, PetSubState } from "../types/pet";
-import { CHARACTER_REGISTRY } from "../types/pet";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -12,25 +11,6 @@ interface PetWidgetProps {
   petName: PetName;
   profileName: string;
   initialX: number;
-}
-
-// ─── Animation Selection Logic ───────────────────────────────────
-// Selects animation based on sub-state with fallback to parent state
-function getAnimationForSubState(
-  characterId: PetName,
-  subState?: PetSubState
-): string | undefined {
-  if (!subState) return undefined;
-  
-  const character = CHARACTER_REGISTRY[characterId];
-  if (!character?.animations) return undefined;
-  
-  // Try to get specific animation for sub-state
-  const animation = character.animations[subState];
-  if (animation) return animation;
-  
-  // Fallback to parent state animation (handled by character component)
-  return undefined;
 }
 
 // ─── Priority State Machine ───────────────────────────────────
@@ -54,6 +34,9 @@ function resolveState(current: PetState, incoming: PetState): PetState {
 }
 
 // ─── Cross-fade SVG renderer ─────────────────────────────────
+// Cross-fades on both state changes AND animation variant changes.
+// Uses a dual-layer approach: when the animation variant changes,
+// the old animation fades out and the new one fades in (150ms).
 function PetCharacter({
   characterId,
   state,
@@ -61,6 +44,7 @@ function PetCharacter({
   direction,
   eyeX,
   eyeY,
+  animationName,
 }: {
   characterId: PetName;
   state: PetState;
@@ -68,11 +52,15 @@ function PetCharacter({
   direction: number;
   eyeX: number;
   eyeY: number;
+  animationName?: string;
 }) {
   const [displayState, setDisplayState] = useState(state);
+  const [displayAnimation, setDisplayAnimation] = useState(animationName);
   const [fading, setFading] = useState(false);
   const prevStateRef = useRef(state);
+  const prevAnimationRef = useRef(animationName);
 
+  // Cross-fade on state change
   useEffect(() => {
     if (state !== prevStateRef.current) {
       setFading(true);
@@ -80,16 +68,30 @@ function PetCharacter({
         setDisplayState(state);
         prevStateRef.current = state;
         setFading(false);
-      }, 150); // Cross-fade duration
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [state]);
 
+  // Cross-fade on animation variant change
+  useEffect(() => {
+    if (animationName !== prevAnimationRef.current) {
+      setFading(true);
+      const timer = setTimeout(() => {
+        setDisplayAnimation(animationName);
+        prevAnimationRef.current = animationName;
+        setFading(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [animationName]);
+
   const flip = direction < 0 ? "scale(-1, 1)" : "";
+  const animClass = displayAnimation ? `anim-${displayAnimation}` : "";
 
   return (
     <div
-      className="pet-character-svg-wrapper"
+      className={`pet-character-svg-wrapper ${animClass}`}
       style={{
         opacity: fading ? 0.5 : 1,
         transition: "opacity 150ms ease-in-out",
@@ -119,6 +121,7 @@ export function PetWidget({ petName, profileName, initialX }: PetWidgetProps) {
   const setPetPosition = usePetSystemStore((s) => s.setPetPosition);
   const followMouse = usePetSystemStore((s) => s.followMouse);
   const followDistance = usePetSystemStore((s) => s.followDistance);
+  const currentAnimation = usePetSystemStore((s) => s.getPetAnimation(profileName));
 
   const { position, isDragging, directionRef, widgetRef, handleMouseDown, getSizeScale } =
     usePetMovement({ petName, size: "medium", initialX, followTarget, followDistance: followDistance });
@@ -285,17 +288,11 @@ export function PetWidget({ petName, profileName, initialX }: PetWidgetProps) {
   }, [applyState]);
 
   const scale = getSizeScale();
-  
-  // Get animation class based on sub-state with fallback to parent state
-  const subStateAnimation = getAnimationForSubState(characterId, currentSubState);
-  const animationClass = subStateAnimation 
-    ? `${subStateAnimation}-animation` 
-    : currentState === "idle" ? "idle-animation" : "";
 
   return (
     <div
       ref={widgetRef}
-      className={`floating-widget ${animationClass}`}
+      className="floating-widget"
       style={{
         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
         zIndex: 1000,
@@ -320,6 +317,7 @@ export function PetWidget({ petName, profileName, initialX }: PetWidgetProps) {
           direction={directionRef.current}
           eyeX={eyeOffset.x}
           eyeY={eyeOffset.y}
+          animationName={currentAnimation}
         />
       </div>
     </div>

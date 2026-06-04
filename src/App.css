@@ -148,6 +148,286 @@ body {
   animation: idle-breathe 3s infinite ease-in-out;
 }
 
+/* ─── Animation Variants ───────────────────────────────────── */
+/* These classes are applied by PetCharacter when the resolved
+   animation name changes, with a 150ms cross-fade transition. */
+
+/* Owl variants */
+@keyframes terminal-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(100, 200, 255, 0.3)); }
+  50% { filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.7)); }
+}
+.anim-terminal-glow { animation: terminal-glow 1.5s infinite ease-in-out; }
+
+@keyframes code-typing {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-1px); }
+  75% { transform: translateY(1px); }
+}
+.anim-code-typing { animation: code-typing 0.3s infinite steps(2); }
+
+@keyframes head-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-5deg); }
+  70% { transform: rotate(5deg); }
+}
+.anim-head-tilt { animation: head-tilt 2s infinite ease-in-out; }
+
+@keyframes eye-focus {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.anim-eye-focus { animation: eye-focus 1.5s infinite ease-in-out; }
+
+@keyframes peering {
+  0%, 100% { transform: translateX(0) scale(1); }
+  50% { transform: translateX(3px) scale(1.02); }
+}
+.anim-peering { animation: peering 1.8s infinite ease-in-out; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.anim-bounce { animation: bounce 0.6s infinite ease-in-out; }
+
+@keyframes startled {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.15) translateY(-3px); }
+  30% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.anim-startled { animation: startled 0.8s ease-out; }
+
+/* Brain variants */
+@keyframes neural-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 100, 200, 0.3)); }
+  50% { filter: drop-shadow(0 0 10px rgba(255, 100, 200, 0.8)); }
+}
+.anim-neural-pulse { animation: neural-pulse 1.2s infinite ease-in-out; }
+
+@keyframes synapse-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.anim-synapse-flash { animation: synapse-flash 0.4s infinite steps(2); }
+
+@keyframes wave-scan {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(1.03); }
+  100% { transform: scaleX(1); }
+}
+.anim-wave-scan { animation: wave-scan 1.5s infinite ease-in-out; }
+
+@keyframes deep-focus {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+.anim-deep-focus { animation: deep-focus 2s infinite ease-in-out; }
+
+@keyframes pulse-inquiry {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+.anim-pulse-inquiry { animation: pulse-inquiry 1.5s infinite ease-in-out; }
+
+@keyframes spark-burst {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 200, 100, 0)); }
+  50% { filter: drop-shadow(0 0 12px rgba(255, 200, 100, 0.8)); }
+}
+.anim-spark-burst { animation: spark-burst 0.8s infinite ease-in-out; }
+
+@keyframes jolt {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, -1px); }
+  40% { transform: translate(2px, 1px); }
+  60% { transform: translate(-1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+.anim-jolt { animation: jolt 0.3s ease-out; }
+
+/* Terminal variants */
+@keyframes cursor-blink-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.anim-cursor-blink-fast { animation: cursor-blink-fast 0.5s infinite steps(1); }
+
+@keyframes keystroke {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(1px); }
+}
+.anim-keystroke { animation: keystroke 0.15s infinite steps(2); }
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+.anim-scan-line { animation: scan-line 1.5s infinite linear; }
+
+@keyframes process-bar {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.95); }
+}
+.anim-process-bar { animation: process-bar 1s infinite ease-in-out; }
+
+@keyframes prompt-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.anim-prompt-blink { animation: prompt-blink 1s infinite ease-in-out; }
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); filter: none; }
+  20% { transform: translate(-1px, 1px); filter: hue-rotate(90deg); }
+  40% { transform: translate(1px, -1px); filter: hue-rotate(-90deg); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+.anim-glitch { animation: glitch 0.3s infinite steps(2); }
+
+@keyframes error-flash {
+  0%, 100% { filter: none; }
+  50% { filter: brightness(1.5) saturate(0); }
+}
+.anim-error-flash { animation: error-flash 0.5s ease-out; }
+
+/* Magnifying glass variants */
+@keyframes glass-glide {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, 2px); }
+}
+.anim-glass-glide { animation: glass-glide 2s infinite ease-in-out; }
+
+@keyframes inspect {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(5deg) scale(1.05); }
+}
+.anim-inspect { animation: inspect 1s infinite ease-in-out; }
+
+@keyframes sweep {
+  0% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  100% { transform: translateX(-5px); }
+}
+.anim-sweep { animation: sweep 1.5s infinite ease-in-out; }
+
+@keyframes zoom {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.anim-zoom { animation: zoom 1s infinite ease-in-out; }
+
+@keyframes tilt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg); }
+}
+.anim-tilt { animation: tilt 1.5s infinite ease-in-out; }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-spin { animation: spin 2s infinite linear; }
+
+@keyframes shake {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(-3px, 0); }
+  75% { transform: translate(3px, 0); }
+}
+.anim-shake { animation: shake 0.3s ease-out; }
+
+/* Paw variants */
+@keyframes tap {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(3px) scale(0.97); }
+}
+.anim-tap { animation: tap 0.4s infinite ease-in-out; }
+
+@keyframes stretch {
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  50% { transform: scaleX(1.05) scaleY(0.95); }
+}
+.anim-stretch { animation: stretch 1.5s infinite ease-in-out; }
+
+@keyframes lift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.anim-lift { animation: lift 0.8s infinite ease-in-out; }
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(3px); }
+  70% { transform: translateX(-1px); }
+}
+.anim-nudge { animation: nudge 0.6s infinite ease-in-out; }
+
+@keyframes boing {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  30% { transform: translateY(-10px) scaleY(1.1); }
+  50% { transform: translateY(0) scaleY(0.9); }
+  70% { transform: translateY(-4px) scaleY(1.05); }
+}
+.anim-boing { animation: boing 0.8s ease-in-out; }
+
+@keyframes jump {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(-12px); }
+  50% { transform: translateY(0); }
+  70% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+.anim-jump { animation: jump 0.5s ease-out; }
+
+/* Pixie variants */
+@keyframes spark-trail {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(200, 100, 255, 0.3)); }
+  50% { filter: drop-shadow(0 0 10px rgba(200, 100, 255, 0.8)); }
+}
+.anim-spark-trail { animation: spark-trail 1s infinite ease-in-out; }
+
+@keyframes dust-swirl {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-dust-swirl { animation: dust-swirl 3s infinite linear; }
+
+@keyframes glow-pulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 2px rgba(200, 255, 100, 0.3)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 8px rgba(200, 255, 100, 0.7)); }
+}
+.anim-glow-pulse { animation: glow-pulse 1.5s infinite ease-in-out; }
+
+@keyframes orbital {
+  0% { transform: rotate(0deg) translateX(3px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(3px) rotate(-360deg); }
+}
+.anim-orbital { animation: orbital 2s infinite linear; }
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+  75% { opacity: 0.9; }
+}
+.anim-flicker { animation: flicker 0.5s infinite steps(3); }
+
+@keyframes explosion {
+  0% { transform: scale(1); filter: brightness(1); }
+  30% { transform: scale(1.2); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.anim-explosion { animation: explosion 0.6s ease-out; }
+
+@keyframes scatter {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.anim-scatter { animation: scatter 0.4s ease-out; }
+
 /* ─── Manager Toggle ───────────────────────────────────────── */
 .manager-toggle {
   position: fixed;

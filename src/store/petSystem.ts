@@ -8,7 +8,7 @@ import type {
   Session,
   SessionEvent,
 } from "../types/pet";
-import { CHARACTER_ANIMATIONS, SUBSTATE_PARENT_STATE } from "../types/pet";
+import { CHARACTER_ANIMATIONS } from "../types/pet";
 
 // ─── Profile → Character mapping ─────────────────────────────
 // Persists which character each Hermes profile uses
@@ -173,13 +173,10 @@ export const usePetSystemStore = create<PetSystemStore>((set, get) => ({
   getPetAnimation: (profile) => {
     const pet = get().pets.find((p) => p.profileName === profile);
     if (pet?.currentAnimation) return pet.currentAnimation;
-    // Derive from CHARACTER_ANIMATIONS[characterId][subState] with fallback to parent state
+    // Derive from CHARACTER_ANIMATIONS[characterId][subState]
     if (pet?.subState && pet?.characterId) {
       const charAnims = CHARACTER_ANIMATIONS[pet.characterId];
       if (charAnims?.[pet.subState]) return charAnims[pet.subState];
-      // Fallback: try parent state's default animation
-      const parentState = SUBSTATE_PARENT_STATE[pet.subState];
-      if (parentState && charAnims?.[parentState]) return charAnims[parentState];
     }
     return undefined;
   },
