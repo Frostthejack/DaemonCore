@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { useAppConfigStore, useAppConfig } from "../hooks/useAppConfig";
 import type { ThemeName, PetSize } from "../hooks/useAppConfig";
+import { invoke } from "@tauri-apps/api/core";
 
 const THEMES: { id: ThemeName; label: string }[] = [
   { id: "midnight", label: "Midnight" },
@@ -23,6 +25,45 @@ export function SettingsPanel() {
   const { theme, size, setTheme, setSize } = useAppConfig();
   const isSoundsEnabled = useAppConfigStore((s: StoreState) => s.isSoundsEnabled);
   const setSoundsEnabled = useAppConfigStore((s: StoreState) => s.setSoundsEnabled);
+
+  // Webhook authentication state
+  const [webhookToken, setWebhookToken] = useState<string>("");
+  const [lastGenerated, setLastGenerated] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+
+  // Load webhook token on mount
+  useEffect(() => {
+    const loadToken = async () => {
+      try {
+        const token = await invoke<string>("get_webhook_token");
+        setWebhookToken(token);
+        setLastGenerated(new Date().toLocaleString());
+      } catch (e) {
+        console.error("[SettingsPanel] Failed to load webhook token:", e);
+      }
+    };
+    loadToken();
+  }, []);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error("[SettingsPanel] Failed to copy token:", e);
+    }
+  };
+
+  const regenerateToken = async () => {
+    try {
+      const newToken = await invoke<string>("regenerate_webhook_token");
+      setWebhookToken(newToken);
+      setLastGenerated(new Date().toLocaleString());
+    } catch (e) {
+      console.error("[SettingsPanel] Failed to regenerate token:", e);
+    }
+  };
 
   return (
     <div className="settings-panel">
@@ -67,6 +108,41 @@ export function SettingsPanel() {
           />
           <span className="settings-toggle-text">Sounds</span>
         </label>
+      </div>
+
+      {/* Webhook Authentication Section */}
+      <div className="settings-group">
+        <h4 className="settings-section-title">Webhook Authentication</h4>
+        
+        <div className="webhook-token-row">
+          <input
+            type="text"
+            className="webhook-token-input"
+            value={webhookToken}
+            readOnly
+            placeholder="Loading token..."
+          />
+          <button
+            className="webhook-copy-btn"
+            onClick={copyToClipboard}
+            title="Copy token to clipboard"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+
+        <button
+          className="webhook-regenerate-btn"
+          onClick={regenerateToken}
+        >
+          Regenerate Token
+        </button>
+
+        {lastGenerated && (
+          <div className="webhook-timestamp">
+            Last generated: {lastGenerated}
+          </div>
+        )}
       </div>
     </div>
   );

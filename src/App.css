@@ -494,6 +494,81 @@ body {
   font-weight: 500;
 }
 
+/* ─── Webhook Authentication ─────────────────────────────────── */
+.settings-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.webhook-token-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.webhook-token-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+}
+
+.webhook-token-input::selection {
+  background: rgba(100, 100, 255, 0.3);
+}
+
+.webhook-copy-btn {
+  background: rgba(100, 100, 255, 0.2);
+  border: 1px solid rgba(100, 100, 255, 0.3);
+  color: #8080ff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.webhook-copy-btn:hover {
+  background: rgba(100, 100, 255, 0.3);
+  color: #a0a0ff;
+}
+
+.webhook-regenerate-btn {
+  width: 100%;
+  background: rgba(255, 150, 100, 0.2);
+  border: 1px solid rgba(255, 150, 100, 0.3);
+  color: #ff9a64;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.webhook-regenerate-btn:hover {
+  background: rgba(255, 150, 100, 0.3);
+  color: #ffb080;
+}
+
+.webhook-timestamp {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+}
+
 /* ─── Session Panel ─────────────────────────────────────────── */
 
 .session-panel-backdrop {

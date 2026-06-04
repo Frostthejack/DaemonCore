@@ -11,6 +11,13 @@ export type PetState =
   | "notification"
   | "sleeping";
 
+// Animation variant for pet state animations
+export interface AnimationVariant {
+  id: string;
+  name: string;
+  duration: number;
+}
+
 // Granular sub-states for tool-specific pet reactions
 // These map to specific Hermes tool categories for nuanced animations
 export type PetSubState =
@@ -26,6 +33,31 @@ export type PetSubState =
   | "curious"            // search/read operations - investigating
   | "excited"            // image/audio generation - creative output
   | "surprised";         // clarify - needs user input
+
+// Registry mapping pet states to their animation variants
+export type AnimationRegistry = {
+  idle: AnimationVariant[];
+  thinking: AnimationVariant[];
+  working: AnimationVariant[];
+  done: AnimationVariant[];
+  error: AnimationVariant[];
+};
+
+// Sub-state animation mapping - maps sub-states to animation names
+export type SubStateAnimationMap = {
+  [key in PetSubState]?: string;
+};
+
+// Parent state fallback mapping for sub-states
+export const SUBSTATE_PARENT_STATE: Partial<Record<PetSubState, PetState>> = {
+  terminal_work: "working",
+  code_work: "working",
+  searching: "thinking",
+  analyzing: "thinking",
+  curious: "thinking",
+  excited: "working",
+  surprised: "idle",
+};
 
 // Priority mapping for sub-states (higher = more important)
 export const PET_SUBSTATE_PRIORITY: Record<PetSubState, number> = {
@@ -55,7 +87,68 @@ export interface CharacterDef {
   label: string;
   description: string;
   style: "cartoon" | "abstract";
+  // Animation mappings for sub-states - maps sub-state to animation name
+  animations?: SubStateAnimationMap;
 }
+
+// Animation mappings for each character's sub-states
+// Each sub-state maps to a distinct animation that reflects its mood
+export const CHARACTER_ANIMATIONS: Record<PetName, SubStateAnimationMap> = {
+  owl: {
+    terminal_work: "terminal-glow",
+    code_work: "code-typing",
+    searching: "head-tilt",
+    analyzing: "eye-focus",
+    curious: "peering",
+    excited: "bounce",
+    surprised: "startled",
+  },
+  brain: {
+    terminal_work: "neural-pulse",
+    code_work: "synapse-flash",
+    searching: "wave-scan",
+    analyzing: "deep-focus",
+    curious: "pulse-inquiry",
+    excited: "spark-burst",
+    surprised: "jolt",
+  },
+  terminal: {
+    terminal_work: "cursor-blink-fast",
+    code_work: "keystroke",
+    searching: "scan-line",
+    analyzing: "process-bar",
+    curious: "prompt-blink",
+    excited: "glitch",
+    surprised: "error-flash",
+  },
+  magnifying: {
+    terminal_work: "glass-glide",
+    code_work: "inspect",
+    searching: "sweep",
+    analyzing: "zoom",
+    curious: "tilt",
+    excited: "spin",
+    surprised: "shake",
+  },
+  paw: {
+    terminal_work: "tap",
+    code_work: "stretch",
+    searching: "lift",
+    analyzing: "tilt",
+    curious: "nudge",
+    excited: "boing",
+    surprised: "jump",
+  },
+  pixie: {
+    terminal_work: "spark-trail",
+    code_work: "dust-swirl",
+    searching: "glow-pulse",
+    analyzing: "orbital",
+    curious: "flicker",
+    excited: "explosion",
+    surprised: "scatter",
+  },
+};
 
 export const CHARACTER_REGISTRY: Record<PetName, CharacterDef> = {
   owl: {
@@ -63,36 +156,42 @@ export const CHARACTER_REGISTRY: Record<PetName, CharacterDef> = {
     label: "Owl",
     description: "A wise cartoon owl with expressive eyes, feather details, and ear tufts. The default companion.",
     style: "cartoon",
+    animations: CHARACTER_ANIMATIONS.owl,
   },
   brain: {
     id: "brain",
     label: "Brain",
     description: "A glowing pink brain with pulsing neural connections. For deep thinking sessions.",
     style: "abstract",
+    animations: CHARACTER_ANIMATIONS.brain,
   },
   terminal: {
     id: "terminal",
     label: "Terminal",
     description: "A retro green-on-black terminal cursor, blinking and ready for commands.",
     style: "abstract",
+    animations: CHARACTER_ANIMATIONS.terminal,
   },
   magnifying: {
     id: "magnifying",
     label: "Magnifier",
     description: "A friendly magnifying glass that loves investigating things. Curious by nature.",
     style: "cartoon",
+    animations: CHARACTER_ANIMATIONS.magnifying,
   },
   paw: {
     id: "paw",
     label: "Paw",
     description: "A soft, round paw pad that stretches and boops. Loyal and playful.",
     style: "cartoon",
+    animations: CHARACTER_ANIMATIONS.paw,
   },
   pixie: {
     id: "pixie",
     label: "Pixie",
     description: "A cloud of glowing fairy dust and sparkles. Abstract, ethereal, and magical.",
     style: "abstract",
+    animations: CHARACTER_ANIMATIONS.pixie,
   },
 };
 
@@ -132,6 +231,9 @@ export interface PetStateEvent {
   metadata?: Record<string, unknown>;
   // Optional sub-state for granular tool-specific reactions
   sub_state?: PetSubState;
+  // Optional tool name extracted from metadata for tool-specific reactions
+  // Backward compatible: undefined for events without tool names
+  tool_name?: string;
 }
 
 // Session lifecycle event types

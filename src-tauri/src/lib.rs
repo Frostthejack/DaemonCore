@@ -7,6 +7,7 @@ use axum::{
     Json, Router,
     extract::State,
     http::StatusCode,
+    http::header::AUTHORIZATION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -158,11 +159,23 @@ fn extract_substate_from_metadata(metadata: &serde_json::Value, parent_state: &s
 
 async fn handle_webhook(
     State(app): State<Arc<Mutex<AppHandle>>>,
+    TypedHeader(auth): TypedHeader<Authorization<Bearer>>,
     Json(payload): Json<WebhookEvent>,
 ) -> Result<Json<WebhookResponse>, StatusCode> {
+    // Validate the bearer token
+    let expected_token = get_token_store().get().await;
+    if auth.token() != expected_token {
+        eprintln!("[webhook] Invalid token provided");
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
     eprintln!("[webhook] Received event: {} for profile: {}", payload.event_type, payload.profile_name);
     let app = app.lock().await;
     let pet_state = map_event_to_pet_state(&payload.event_type);
+    
+    // Extract tool name from metadata for tool-specific reactions
+    // Backward compatible: returns None if no tool field in metadata
+    let tool_name = payload.metadata.get("tool").and_then(|t| t.as_str());
     
     // Extract sub-state from metadata if available
     // Pass the parent state to disambiguate tools like execute_code
@@ -178,7 +191,18 @@ async fn handle_webhook(
         eprintln!("[webhook] Failed to emit pet_state_event: {}", e);
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
-    if let Err(e) = app.emit("hermes_event", &payload) {
+    
+    // Emit hermes_event with tool_name included in payload
+    // Backward compatible: tool_name is optional and defaults to null for events without it
+    let event_payload = serde_json::json!({
+        "event_type": &payload.event_type,
+        "profile_name": &payload.profile_name,
+        "session_id": &payload.session_id,
+        "message": &payload.message,
+        "metadata": &payload.metadata,
+        "tool_name": tool_name,
+    });
+    if let Err(e) = app.emit("hermes_event", event_payload) {
         eprintln!("[webhook] Failed to emit hermes_event: {}", e);
     }
     
@@ -208,6 +232,10 @@ async fn handle_webhook(
 }
 
 async fn start_webhook_server(app_handle: tauri::AppHandle) {
+    // Load or generate the webhook auth token
+    let token = load_or_generate_token(&app_handle);
+    get_token_store().set(token).await;
+
     let app = Arc::new(Mutex::new(app_handle));
     let router = Router::new()
         .route("/api/webhook", post(handle_webhook))
@@ -341,6 +369,39 @@ async fn update_pet_position(
 async fn remove_pet_position(profile_name: String) -> Result<(), String> {
     get_pet_store().remove(&profile_name).await;
     Ok(())
+}
+
+/// Tauri command to get the webhook auth token
+/// This allows the frontend to retrieve the token for making authenticated requests
+#[tauri::command]
+async fn get_webhook_token() -> Result<String, String> {
+    Ok(get_token_store().get().await)
+}
+
+/// Tauri command to regenerate the webhook auth token
+/// Generates a new UUID token and persists it to the config file
+#[tauri::command]
+async fn regenerate_webhook_token(app: tauri::AppHandle) -> Result<String, String> {
+    // Generate new token
+    let new_token = Uuid::new_v4().to_string();
+    
+    // Save to file
+    let token_path = app
+        .path()
+        .app_config_dir()
+        .map(|p| p.join("webhook_token.txt"))
+        .unwrap_or_else(|_| std::path::PathBuf::from("webhook_token.txt"));
+    
+    if let Some(parent) = token_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(&token_path, &new_token);
+    
+    // Update in-memory store
+    get_token_store().set(new_token.clone()).await;
+    
+    eprintln!("[webhook] Regenerated new token: {}", new_token);
+    Ok(new_token)
 }
 
 /// Spawn a background task that polls the OS mouse position and emits
@@ -583,6 +644,8 @@ pub async fn run() {
             set_ignore_cursor_events,
             update_pet_position,
             remove_pet_position,
+            get_webhook_token,
+            regenerate_webhook_token,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
